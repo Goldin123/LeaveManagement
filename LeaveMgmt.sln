@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LeaveMgmt.Infrastructure", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LeaveMgmt.Api", "src\LeaveMgmt.Api\LeaveMgmt.Api.csproj", "{7E32626B-6717-4EDD-AC3E-480036DC21E3}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -80,5 +82,8 @@ Global
 		{378A8804-CFD9-47D6-9DAA-885360F4C10B} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{BAD353F6-939E-4915-90A1-D4D2578796AB} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{7E32626B-6717-4EDD-AC3E-480036DC21E3} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9518F287-AEC6-4713-9E59-877FAFCA39F9}
 	EndGlobalSection
 EndGlobal

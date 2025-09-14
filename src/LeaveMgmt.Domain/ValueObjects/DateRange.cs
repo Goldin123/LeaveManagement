@@ -1,17 +1,21 @@
-﻿namespace LeaveMgmt.Domain.ValueObjects;
+﻿using LeaveMgmt.Domain.Common;
+
+namespace LeaveMgmt.Domain.ValueObjects;
 
 public readonly struct DateRange
 {
-    public DateOnly From { get; }
-    public DateOnly To   { get; }
-    public int Days => To.DayNumber - From.DayNumber + 1;
+    public DateOnly Start { get; }
+    public DateOnly End { get; }
 
-    public DateRange(DateOnly from, DateOnly to)
+    public int Days => End.DayNumber - Start.DayNumber + 1;
+
+    public DateRange(DateOnly start, DateOnly end)
     {
-        if (to < from) throw new ArgumentException("To must be >= From");
-        From = from; To = to;
+        if (end < start) throw new DomainException("End date cannot be before start date.");
+        Start = start;
+        End = end;
     }
 
     public bool Overlaps(DateRange other) =>
-        From <= other.To && other.From <= To;
+        Start <= other.End && other.Start <= End;
 }
