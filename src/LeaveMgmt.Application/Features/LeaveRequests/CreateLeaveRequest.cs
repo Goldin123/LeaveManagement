@@ -1,9 +1,10 @@
 ﻿using LeaveMgmt.Application.Abstractions;
 using LeaveMgmt.Domain;
 using LeaveMgmt.Domain.Entities;
+using LeaveMgmt.Domain.LeaveRequests;
 
 namespace LeaveMgmt.Application.Features.LeaveRequests;
-
+/*
 public sealed record CreateLeaveRequest(
     Guid EmployeeId,
     string Type,
@@ -38,3 +39,4 @@ public sealed class CreateLeaveRequestHandler : IRequestHandler<CreateLeaveReque
         return Result<Guid>.Success(entity.Id);
     }
 }
+*/

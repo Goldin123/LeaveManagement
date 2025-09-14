@@ -5,8 +5,10 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.9" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.9" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.9" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.9" />
     <PackageReference Include="StackExchange.Redis" Version="2.9.17" />
   </ItemGroup>
@@ -14,6 +16,11 @@
   <ItemGroup>
     <ProjectReference Include="..\LeaveMgmt.Application\LeaveMgmt.Application.csproj" />
     <ProjectReference Include="..\LeaveMgmt.Domain\LeaveMgmt.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Caching\" />
+    <Folder Include="Procedures\" />
   </ItemGroup>
 
   <PropertyGroup>

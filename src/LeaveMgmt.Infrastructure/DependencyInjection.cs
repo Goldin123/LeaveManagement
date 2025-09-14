@@ -1,18 +1,32 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using LeaveMgmt.Application.Abstractions;
-using LeaveMgmt.Domain.Entities;
-using LeaveMgmt.Infrastructure.Services;
+﻿using LeaveMgmt.Application.Abstractions.Repositories;
+using LeaveMgmt.Infrastructure.Messaging;
+using LeaveMgmt.Infrastructure.Persistence;
+using LeaveMgmt.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 namespace LeaveMgmt.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
-        services.AddSingleton<IDateTime, SystemClock>();
+        // ---- EF Core ----
+        var cs = config.GetConnectionString("DefaultConnection")
+                 ?? "Data Source=:memory:"; // test fallback
+        services.AddDbContext<LeaveMgmtDbContext>(opt => opt.UseSqlite(cs)); // or UseSqlServer(cs)
 
-        // repositories
-        services.AddSingleton<IRepository<LeaveRequest>, InMemoryRepository<LeaveRequest>>();
+        // ---- Repositories ----
+        services.AddScoped<ILeaveRequestRepository, LeaveRequestRepository>();
+        services.AddScoped<ILeaveTypeRepository, LeaveTypeRepository>();
+
+        // ---- Redis Bus + Outbox Dispatcher ----
+        var redis = config.GetConnectionString("Redis") ?? "localhost:6379";
+        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redis));
+        services.AddSingleton<IEventBus, RedisEventBus>();
+        services.AddHostedService<OutboxDispatcher>();
 
         return services;
     }
