@@ -5,11 +5,13 @@ using System.Threading.Tasks;
 using LeaveMgmt.Infrastructure.Messaging;
 using LeaveMgmt.Infrastructure.Persistence;
 using LeaveMgmt.Infrastructure.Persistence.Outbox;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+
+namespace LeaveMgmt.Infrastructure.FunctionalTests.Messaging;
 
 public class OutboxDispatcherTests
 {
@@ -26,30 +28,53 @@ public class OutboxDispatcherTests
     [Fact] // Functional
     public async Task Dispatcher_Should_Publish_And_Mark_Dispatched()
     {
-        // Arrange: in-memory Sqlite for EF
-        var opts = new DbContextOptionsBuilder<LeaveMgmtDbContext>()
-            .UseSqlite("Data Source=:memory:")
+        // Use ONE in-memory sqlite connection for the whole test
+        var conn = new SqliteConnection("Data Source=:memory:");
+        await conn.OpenAsync();
+
+        // Seed the database with an outbox message
+        var dbOpts = new DbContextOptionsBuilder<LeaveMgmtDbContext>()
+            .UseSqlite(conn)
             .Options;
 
-        await using var db = new LeaveMgmtDbContext(opts);
-        await db.Database.OpenConnectionAsync();
-        await db.Database.EnsureCreatedAsync();
+        await using var seedCtx = new LeaveMgmtDbContext(dbOpts);
+        await seedCtx.Database.EnsureCreatedAsync();
 
         var msg = new OutboxMessage { Topic = "LeaveRequestApproved", Payload = "{}" };
-        db.Outbox.Add(msg);
-        await db.SaveChangesAsync();
+        seedCtx.Outbox.Add(msg);
+        await seedCtx.SaveChangesAsync();
 
+        // Build a minimal DI container the dispatcher will use per-scope
+        var services = new ServiceCollection();
+
+        // Register DbContext against the SAME open connection
+        services.AddDbContext<LeaveMgmtDbContext>(o => o.UseSqlite(conn));
+
+        // Register the stub bus so the dispatcher can resolve it in each scope
         var bus = new StubBus();
-        var dispatcher = new OutboxDispatcher(db, bus, new NullLogger<OutboxDispatcher>());
+        services.AddSingleton<IEventBus>(bus);
 
-        // Act: run the dispatcher shortly and cancel
-        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(3500));
+        // Build provider and get scope factory
+        var provider = services.BuildServiceProvider();
+        var scopeFactory = provider.GetRequiredService<IServiceScopeFactory>();
+
+        // New ctor: (ILogger<OutboxDispatcher>, IServiceScopeFactory)
+        var dispatcher = new OutboxDispatcher(new NullLogger<OutboxDispatcher>(), scopeFactory);
+
+        // Run dispatcher briefly then stop (wait > poll interval: ~2s)
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         await dispatcher.StartAsync(cts.Token);
-        await Task.Delay(500, cts.Token); // give it one tick
+
+        // Give it one poll tick + buffer
+        await Task.Delay(TimeSpan.FromMilliseconds(2500), cts.Token);
+
         await dispatcher.StopAsync(CancellationToken.None);
 
-        // Assert: message marked dispatched and published
+        // Verify it published and marked message as dispatched
         Assert.True(bus.Published >= 1);
-        Assert.NotNull((await db.Outbox.FirstAsync()).DispatchedUtc);
+
+        await using var verifyCtx = new LeaveMgmtDbContext(dbOpts);
+        var first = await verifyCtx.Outbox.FirstAsync();
+        Assert.NotNull(first.DispatchedUtc);
     }
 }

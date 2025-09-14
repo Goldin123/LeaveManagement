@@ -1,7 +1,9 @@
 ﻿using LeaveMgmt.Application.Abstractions.Repositories;
+using LeaveMgmt.Application.Abstractions.Security;
 using LeaveMgmt.Infrastructure.Messaging;
 using LeaveMgmt.Infrastructure.Persistence;
 using LeaveMgmt.Infrastructure.Repositories;
+using LeaveMgmt.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,10 +15,15 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
-        // ---- EF Core ----
+        // ---- EF Core : SQL Server (code-first migrations live in this assembly) ----
         var cs = config.GetConnectionString("DefaultConnection")
-                 ?? "Data Source=:memory:"; // test fallback
-        services.AddDbContext<LeaveMgmtDbContext>(opt => opt.UseSqlite(cs)); // or UseSqlServer(cs)
+                 ?? throw new InvalidOperationException("Missing connection string 'DefaultConnection'.");
+
+        services.AddDbContext<LeaveMgmtDbContext>(opt =>
+            opt.UseSqlServer(cs, sql =>
+            {
+                sql.MigrationsAssembly(typeof(LeaveMgmtDbContext).Assembly.FullName);
+            }));
 
         // ---- Repositories ----
         services.AddScoped<ILeaveRequestRepository, LeaveRequestRepository>();
@@ -27,6 +34,10 @@ public static class DependencyInjection
         services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redis));
         services.AddSingleton<IEventBus, RedisEventBus>();
         services.AddHostedService<OutboxDispatcher>();
+
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
         return services;
     }
