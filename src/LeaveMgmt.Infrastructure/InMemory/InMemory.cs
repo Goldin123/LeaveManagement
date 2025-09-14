@@ -1,7 +1,7 @@
 ﻿using LeaveMgmt.Application.Abstractions;
 using LeaveMgmt.Domain.Entities;
 
-namespace LeaveMgmt.Infrastructure.Services;
+namespace LeaveMgmt.Infrastructure.InMemory;
 
 public sealed class SystemClock : IDateTime
 {
