@@ -1,7 +1,9 @@
 ﻿using LeaveMgmt.Application.Abstractions.Repositories;
+using LeaveMgmt.Application.Abstractions.Security;
 using LeaveMgmt.Infrastructure.Messaging;
 using LeaveMgmt.Infrastructure.Persistence;
 using LeaveMgmt.Infrastructure.Repositories;
+using LeaveMgmt.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +29,10 @@ public static class DependencyInjection
         services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redis));
         services.AddSingleton<IEventBus, RedisEventBus>();
         services.AddHostedService<OutboxDispatcher>();
+
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
         return services;
     }

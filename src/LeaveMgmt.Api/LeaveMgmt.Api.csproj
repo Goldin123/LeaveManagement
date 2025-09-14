@@ -13,12 +13,6 @@
     <ProjectReference Include="..\LeaveMgmt.Infrastructure\LeaveMgmt.Infrastructure.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Auth\" />
-    <Folder Include="Configuration\" />
-    <Folder Include="Endpoints\" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>

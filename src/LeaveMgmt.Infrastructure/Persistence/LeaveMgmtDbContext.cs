@@ -14,6 +14,8 @@ public sealed class LeaveMgmtDbContext : AppDbContext
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();
     public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
+    public DbSet<LeaveMgmt.Domain.Users.User> Users => Set<LeaveMgmt.Domain.Users.User>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
