@@ -10,36 +10,31 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        // custom mediator
         services.AddSingleton<IMediator, Mediator>();
 
         var asm = Assembly.GetExecutingAssembly();
 
-        // register all IRequestHandler<,>
+        // Handlers
         var handlerTypes = asm.GetTypes()
             .Where(t => !t.IsAbstract && !t.IsInterface)
             .SelectMany(t => t.GetInterfaces()
-                .Where(i => i.IsGenericType &&
-                            i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>))
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>))
                 .Select(i => new { Service = i, Impl = t }));
 
-        foreach (var h in handlerTypes)
-        {
-            services.AddScoped(h.Service, h.Impl);
-        }
+        foreach (var h in handlerTypes) services.AddScoped(h.Service, h.Impl);
 
-        // register FluentValidation validators
+        // Validators
         var validatorTypes = asm.GetTypes()
             .Where(t => !t.IsAbstract && !t.IsInterface)
             .SelectMany(t => t.GetInterfaces()
-                .Where(i => i.IsGenericType &&
-                            i.GetGenericTypeDefinition() == typeof(IValidator<>))
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IValidator<>))
                 .Select(i => new { Service = i, Impl = t }));
 
-        foreach (var v in validatorTypes)
-        {
-            services.AddScoped(v.Service, v.Impl);
-        }
+        foreach (var v in validatorTypes) services.AddScoped(v.Service, v.Impl);
+
+        // Pipeline behaviors (order: auth, then validation, then handler)
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         return services;
     }
