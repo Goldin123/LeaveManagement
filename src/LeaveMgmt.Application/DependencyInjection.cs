@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿// File: LeaveMgmt.Application/DependencyInjection.cs
+using System.Reflection;
+using FluentValidation;
 using LeaveMgmt.Application.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,19 +12,29 @@ public static class DependencyInjection
     {
         services.AddSingleton<IMediator, Mediator>();
 
-        // Auto-register all IRequestHandler<,> found in this assembly
         var asm = Assembly.GetExecutingAssembly();
-        var handlerInterface = typeof(IRequestHandler<,>);
-        foreach (var t in asm.GetTypes())
-        {
-            var hi = t.GetInterfaces().FirstOrDefault(i =>
-                i.IsGenericType && i.GetGenericTypeDefinition() == handlerInterface);
 
-            if (hi is not null && t is { IsAbstract: false, IsInterface: false })
-            {
-                services.AddTransient(hi, t);
-            }
-        }
+        // Handlers
+        var handlerTypes = asm.GetTypes()
+            .Where(t => !t.IsAbstract && !t.IsInterface)
+            .SelectMany(t => t.GetInterfaces()
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>))
+                .Select(i => new { Service = i, Impl = t }));
+
+        foreach (var h in handlerTypes) services.AddScoped(h.Service, h.Impl);
+
+        // Validators
+        var validatorTypes = asm.GetTypes()
+            .Where(t => !t.IsAbstract && !t.IsInterface)
+            .SelectMany(t => t.GetInterfaces()
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IValidator<>))
+                .Select(i => new { Service = i, Impl = t }));
+
+        foreach (var v in validatorTypes) services.AddScoped(v.Service, v.Impl);
+
+        // Pipeline behaviors (order: auth, then validation, then handler)
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         return services;
     }

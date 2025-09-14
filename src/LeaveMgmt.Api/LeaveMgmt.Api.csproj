@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
     <PackageReference Include="FastEndpoints" Version="7.0.1" />
@@ -11,6 +11,12 @@
   <ItemGroup>
     <ProjectReference Include="..\LeaveMgmt.Application\LeaveMgmt.Application.csproj" />
     <ProjectReference Include="..\LeaveMgmt.Infrastructure\LeaveMgmt.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Auth\" />
+    <Folder Include="Configuration\" />
+    <Folder Include="Endpoints\" />
   </ItemGroup>
 
   <PropertyGroup>
