@@ -5,7 +5,11 @@ using LeaveMgmt.Application;
 using LeaveMgmt.Application.Abstractions.Identity;
 using LeaveMgmt.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.IdentityModel.Tokens;
+using NJsonSchema;
+using NJsonSchema.Generation; 
+using NJsonSchema.Generation.TypeMappers;
 using System.Text;
 
 namespace LeaveMgmt.Api.Configuration;
@@ -37,14 +41,25 @@ public static class DependencyInjection
         services.AddAuthorization();
 
         services.AddFastEndpoints();
-        services.SwaggerDocument(o =>
+
+        // Older API:
+        services.AddSwaggerDocument(s =>
         {
-            o.DocumentSettings = s =>
+            // DateOnly mapping to prevent generator 500
+            s.SchemaSettings.TypeMappers.Add(new PrimitiveTypeMapper(typeof(DateOnly), schema =>
             {
-                s.Title = "LeaveMgmt API";
-                s.Version = "v1";
-            };
-            o.ShortSchemaNames = true;
+                schema.Type = JsonObjectType.String;
+                schema.Format = "date";
+            }));
+            s.SchemaSettings.TypeMappers.Add(new PrimitiveTypeMapper(typeof(DateOnly?), schema =>
+            {
+                schema.Type = JsonObjectType.String;
+                //schema.IsNullable = true;
+                schema.Format = "date";
+            }));
+
+            s.Title = "LeaveMgmt API";
+            s.Version = "v1";
         });
 
         return services;
@@ -57,7 +72,9 @@ public static class DependencyInjection
 
         app.UseFastEndpoints(c => c.Endpoints.RoutePrefix = "api");
 
-        app.UseSwaggerGen(); // FastEndpoints.Swagger
+        // Older middleware pair:
+        app.UseOpenApi();
+        app.UseSwaggerUi(s => s.ConfigureDefaults()); // UI at /swagger
 
         return app;
     }

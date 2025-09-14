@@ -15,10 +15,15 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
-        // ---- EF Core ----
+        // ---- EF Core : SQL Server (code-first migrations live in this assembly) ----
         var cs = config.GetConnectionString("DefaultConnection")
-                 ?? "Data Source=:memory:"; // test fallback
-        services.AddDbContext<LeaveMgmtDbContext>(opt => opt.UseSqlite(cs)); // or UseSqlServer(cs)
+                 ?? throw new InvalidOperationException("Missing connection string 'DefaultConnection'.");
+
+        services.AddDbContext<LeaveMgmtDbContext>(opt =>
+            opt.UseSqlServer(cs, sql =>
+            {
+                sql.MigrationsAssembly(typeof(LeaveMgmtDbContext).Assembly.FullName);
+            }));
 
         // ---- Repositories ----
         services.AddScoped<ILeaveRequestRepository, LeaveRequestRepository>();
