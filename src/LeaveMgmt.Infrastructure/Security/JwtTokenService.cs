@@ -20,7 +20,6 @@ internal sealed class JwtTokenService(IConfiguration config) : IJwtTokenService
             SecurityAlgorithms.HmacSha256
         );
 
-        // Include both standard subject (sub) and NameIdentifier so either can be read client-side.
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, userId.ToString()),
@@ -28,8 +27,11 @@ internal sealed class JwtTokenService(IConfiguration config) : IJwtTokenService
             new(ClaimTypes.Email,            email ?? string.Empty),
         };
 
-        // Roles (CSV already split at caller or pass IEnumerable<string>)
-        claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+        foreach (var r in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, r));
+            claims.Add(new Claim("role", r)); // explicit role claim for client-side parsing
+        }
 
         var token = new JwtSecurityToken(
             issuer: issuer,

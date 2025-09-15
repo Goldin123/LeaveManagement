@@ -1,5 +1,7 @@
 ﻿using LeaveMgmt.Website.Models;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace LeaveMgmt.Website.Services
 {
@@ -30,18 +32,16 @@ namespace LeaveMgmt.Website.Services
 
             Token = dto.Token;
 
-            // Guard JS during any potential prerender edge cases
+            // Guard JS during prerender
             try
             {
                 await _storage.SetAsync("jwt", Token);
             }
-            catch (InvalidOperationException)
-            {
-                // Prerendered static render path cannot use JS; ignore and continue.
-                // Token is still set in-memory; UI remains functional after circuit connects.
-            }
+            catch (InvalidOperationException) { }
 
-            CurrentUser = new UserInfo { UserName = dto.UserName, Role = dto.Role };
+            var role = TryGetUserRoleFromJwt(Token);
+            CurrentUser = new UserInfo { UserName = dto.UserName, Role = role ?? "Employee" };
+
             return ApiResult<LoginResponse>.Ok(dto);
         }
 
@@ -56,21 +56,17 @@ namespace LeaveMgmt.Website.Services
 
         public async Task InitializeAsync()
         {
-            // ProtectedLocalStorage uses JS interop; it throws during prerender.
             try
             {
                 var jwt = await _storage.GetAsync<string>("jwt");
                 if (jwt.Success && !string.IsNullOrWhiteSpace(jwt.Value))
                 {
                     Token = jwt.Value;
-                    CurrentUser ??= new UserInfo { UserName = "Me", Role = "Employee" };
+                    var role = TryGetUserRoleFromJwt(Token);
+                    CurrentUser ??= new UserInfo { UserName = "Me", Role = role ?? "Employee" };
                 }
             }
-            catch (InvalidOperationException)
-            {
-                // Running during static prerender – skip. The UI can call this again after
-                // interactivity is established, and all other logic remains unchanged.
-            }
+            catch (InvalidOperationException) { }
         }
 
         public async Task LogoutAsync()
@@ -82,9 +78,25 @@ namespace LeaveMgmt.Website.Services
             {
                 await _storage.DeleteAsync("jwt");
             }
-            catch (InvalidOperationException)
+            catch (InvalidOperationException) { }
+        }
+
+        private static string? TryGetUserRoleFromJwt(string? jwt)
+        {
+            if (string.IsNullOrWhiteSpace(jwt))
+                return null;
+
+            try
             {
-                // Ignore if prerender prevents JS – in-memory state already cleared.
+                var token = new JwtSecurityTokenHandler().ReadJwtToken(jwt);
+
+                // Try common role claim types
+                return token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value
+                    ?? token.Claims.FirstOrDefault(c => c.Type == "role")?.Value;
+            }
+            catch
+            {
+                return null;
             }
         }
     }
