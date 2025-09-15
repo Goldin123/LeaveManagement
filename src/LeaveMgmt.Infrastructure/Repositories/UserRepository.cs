@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LeaveMgmt.Infrastructure.Repositories;
 
-internal sealed class UserRepository(LeaveMgmtDbContext db) : IUserRepository
+public sealed class UserRepository(LeaveMgmtDbContext db) : IUserRepository
 {
     public async Task<Result<User>> CreateAsync(User user, CancellationToken ct = default)
     {

@@ -1,0 +1,14 @@
+Dev Team
+
+Team Lead
+Colin Horton (Employee Number 0003)
+
+Team Members
+Full Name,Employee Number,Email Address,Cellphone Number
+Ella Jefferson,2005,ellajefferson@acme.com,+27 55 979 367
+Earl Craig,2006,earlcraig@acme.com,+27 20 916 5608
+Marsha Murphy,2008,marshamurphy@acme.com,+36 55 949 891
+Luis Ortega,2009,luisortega@acme.com,+27 20 917 1339
+Faye Dennis,2010,fayedennis@acme.com,
+Amy Burns,2012,amyburns@acme.com,+27 20 914 1775
+Darrel Weber,2013,darrelweber@acme.com,+27 55 615 463

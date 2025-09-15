@@ -10,26 +10,21 @@ public sealed record LoginUserCommand(string Email, string Password) : IRequest<
 public sealed class LoginUserHandler(
     IUserRepository users,
     IPasswordHasher hasher,
-    IJwtTokenService tokens) : IRequestHandler<LoginUserCommand, Result<string>>
+    IJwtTokenService jwt) : IRequestHandler<LoginUserCommand, Result<string>>
 {
     public async Task<Result<string>> Handle(LoginUserCommand cmd, CancellationToken ct)
     {
-        try
-        {
-            var found = await users.GetByEmailAsync(cmd.Email, ct);
-            if (!found.IsSuccess || found.Value is null)
-                return Result<string>.Failure("Invalid credentials.");
+        var email = cmd.Email.Trim().ToLowerInvariant();
+        var found = await users.GetByEmailAsync(email, ct);
+        if (!found.IsSuccess) return Result<string>.Failure(found.Error!);
 
-            var u = found.Value!;
-            if (!hasher.Verify(cmd.Password, u.PasswordHash, u.PasswordSalt))
-                return Result<string>.Failure("Invalid credentials.");
+        var u = found.Value;
+        if (u is null) return Result<string>.Failure("Invalid credentials.");
 
-            var jwt = tokens.CreateToken(u.Id, u.Email, u.Roles);
-            return Result<string>.Success(jwt);
-        }
-        catch (Exception ex)
-        {
-            return Result<string>.Failure($"Login failed: {ex.Message}");
-        }
+        if (!hasher.Verify(cmd.Password, u.PasswordHash, u.PasswordSalt))
+            return Result<string>.Failure("Invalid credentials.");
+
+        var token = jwt.CreateToken(u.Id, u.Email, u.Roles);
+        return Result<string>.Success(token);
     }
 }

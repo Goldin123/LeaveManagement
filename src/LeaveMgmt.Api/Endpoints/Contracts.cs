@@ -18,3 +18,5 @@ public sealed record IdRoute(Guid Id);
 public sealed record RegisterRequest(string Email, string FullName, string Password);
 public sealed record LoginRequest(string Email, string Password);
 public sealed record LoginResponse(string Token);
+public sealed record LoginBody(string Email, string Password);
+public sealed record RegisterBody(string Email, string FullName, string Password);

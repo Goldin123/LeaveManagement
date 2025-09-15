@@ -1,7 +1,8 @@
-﻿namespace LeaveMgmt.Application.Abstractions.Security;
+﻿// File: LeaveMgmt.Application/Abstractions/Security/IPasswordHasher.cs
+namespace LeaveMgmt.Application.Abstractions.Security;
 
 public interface IPasswordHasher
 {
-    (string Hash, string Salt) Hash(string password);
+    (string hash, string salt) Hash(string password);
     bool Verify(string password, string hash, string salt);
 }

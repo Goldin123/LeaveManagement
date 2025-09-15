@@ -1,30 +1,41 @@
-﻿using System.Security.Cryptography;
+﻿// File: LeaveMgmt.Infrastructure/Security/Pbkdf2PasswordHasher.cs
+using System.Security.Cryptography;
+using System.Text;
 using LeaveMgmt.Application.Abstractions.Security;
 
 namespace LeaveMgmt.Infrastructure.Security;
 
-internal sealed class Pbkdf2PasswordHasher : IPasswordHasher
+public sealed class Pbkdf2PasswordHasher : IPasswordHasher
 {
-    private const int SaltSize = 16;   // 128-bit
-    private const int KeySize = 32;   // 256-bit
+    private const int SaltSize = 16;      // 128-bit
+    private const int KeySize = 32;      // 256-bit
     private const int Iterations = 100_000;
 
-    public (string Hash, string Salt) Hash(string password)
+    public (string hash, string salt) Hash(string password)
     {
-        using var rng = RandomNumberGenerator.Create();
-        var salt = new byte[SaltSize];
-        rng.GetBytes(salt);
+        var saltBytes = RandomNumberGenerator.GetBytes(SaltSize);
+        var hashBytes = Rfc2898DeriveBytes.Pbkdf2(
+            password: password,
+            salt: saltBytes,
+            iterations: Iterations,
+            hashAlgorithm: HashAlgorithmName.SHA256,
+            outputLength: KeySize);
 
-        using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256);
-        var key = pbkdf2.GetBytes(KeySize);
-        return (Convert.ToBase64String(key), Convert.ToBase64String(salt));
+        return (hash: Convert.ToBase64String(hashBytes),
+                salt: Convert.ToBase64String(saltBytes));
     }
 
     public bool Verify(string password, string hash, string salt)
     {
         var saltBytes = Convert.FromBase64String(salt);
-        using var pbkdf2 = new Rfc2898DeriveBytes(password, saltBytes, Iterations, HashAlgorithmName.SHA256);
-        var key = pbkdf2.GetBytes(KeySize);
-        return CryptographicOperations.FixedTimeEquals(key, Convert.FromBase64String(hash));
+        var expected = Convert.FromBase64String(hash);
+        var testBytes = Rfc2898DeriveBytes.Pbkdf2(
+            password: password,
+            salt: saltBytes,
+            iterations: Iterations,
+            hashAlgorithm: HashAlgorithmName.SHA256,
+            outputLength: KeySize);
+
+        return CryptographicOperations.FixedTimeEquals(expected, testBytes);
     }
 }
