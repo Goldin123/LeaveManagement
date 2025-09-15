@@ -18,6 +18,8 @@ builder.Services.AddHttpClient("api", client =>
 
 // Register services
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<LeaveRequestService>();
+
 builder.Services.AddScoped<ProtectedLocalStorage>();
 
 var app = builder.Build();

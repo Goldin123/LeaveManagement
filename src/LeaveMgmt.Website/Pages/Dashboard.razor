@@ -1,4 +1,48 @@
 ﻿@page "/dashboard"
+@using LeaveMgmt.Website.Models
+@using LeaveMgmt.Website.Services
+@inject LeaveRequestService LeaveRequests
 
-<h3>Welcome to the Dashboard</h3>
-<p>This will hold leave booking and management functionality.</p>
+<h3>Dashboard</h3>
+
+@if (_requests is null)
+{
+    <p><em>Loading leave requests...</em></p>
+}
+else if (_requests.Count == 0)
+{
+    <p>No leave requests found.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Type</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in _requests)
+            {
+                <tr>
+                    <td>@r.StartDate.ToShortDateString()</td>
+                    <td>@r.EndDate.ToShortDateString()</td>
+                    <td>@r.LeaveTypeName</td>
+                    <td>@r.Status</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<LeaveRequestListItem>? _requests;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _requests = await LeaveRequests.GetByEmployeeAsync();
+    }
+}

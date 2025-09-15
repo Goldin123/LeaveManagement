@@ -1,4 +1,4 @@
-﻿using LeaveMgmt.Website.Models;
+﻿﻿using LeaveMgmt.Website.Models;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -19,6 +19,9 @@ namespace LeaveMgmt.Website.Services
         public UserInfo? CurrentUser { get; private set; }
         public string? Token { get; private set; }
 
+        public string? GetToken() => Token;
+
+
         public async Task<ApiResult<LoginResponse>> LoginAsync(LoginBody body)
         {
             var http = _httpFactory.CreateClient("api");
@@ -31,8 +34,7 @@ namespace LeaveMgmt.Website.Services
                 return ApiResult<LoginResponse>.Fail("Invalid login response.");
 
             Token = dto.Token;
-
-            // Guard JS during prerender
+            LoggedUser.Token = Token;
             try
             {
                 await _storage.SetAsync("jwt", Token);
@@ -40,15 +42,13 @@ namespace LeaveMgmt.Website.Services
             catch (InvalidOperationException) { }
 
             var role = TryGetUserRoleFromJwt(Token);
+            var name = new JwtSecurityTokenHandler()
+                .ReadJwtToken(Token)
+                .Claims
+                .FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
+                ?? "Me";
 
-            dto.UserName = new JwtSecurityTokenHandler()
-                        .ReadJwtToken(Token)
-                        .Claims
-                        .FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
-                        ?? "Me";
-
-            CurrentUser = new UserInfo { UserName = dto.UserName, Role = role ?? "Employee" };
-
+            CurrentUser = new UserInfo { UserName = name, Role = role ?? "Employee" };
             return ApiResult<LoginResponse>.Ok(dto);
         }
 
@@ -75,6 +75,7 @@ namespace LeaveMgmt.Website.Services
                         .Claims
                         .FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
                         ?? "Me";
+
                     CurrentUser ??= new UserInfo { UserName = name, Role = role ?? "Employee" };
                 }
             }
@@ -102,7 +103,6 @@ namespace LeaveMgmt.Website.Services
             {
                 var token = new JwtSecurityTokenHandler().ReadJwtToken(jwt);
 
-                // Try common role claim types
                 return token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value
                     ?? token.Claims.FirstOrDefault(c => c.Type == "role")?.Value;
             }

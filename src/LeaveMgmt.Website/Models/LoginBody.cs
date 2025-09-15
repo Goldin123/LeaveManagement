@@ -36,3 +36,8 @@ public sealed class ApiResult<T>
     public static ApiResult<T> Ok(T data) => new() { Success = true, Data = data };
     public static ApiResult<T> Fail(string? error) => new() { Success = false, Error = error };
 }
+
+public static class LoggedUser 
+{
+    public static string? Token { get; set; }
+}
