@@ -26,8 +26,11 @@
     <Folder Include="Caching\" />
     <Folder Include="Procedures\" />
   </ItemGroup>
+	<ItemGroup>
+		<None Include="Seeds\*.txt" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
 
-  <PropertyGroup>
+	<PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

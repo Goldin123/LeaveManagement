@@ -1,0 +1,10 @@
+Management Team
+
+CEO
+Linda Jenkins (Employee Number 0001)
+
+Team Members
+Full Name,Employee Number,Email Address,Cellphone Number
+Milton Coleman,0002,miltoncoleman@amce.com,+27 55 937 274
+Colin Horton,0003,colinhorton@amce.com,+27 20 915 7545
+

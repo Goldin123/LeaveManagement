@@ -1,0 +1,15 @@
+Support Team
+
+Team Lead
+Milton Coleman (Employee Number 0002)
+
+Team Members
+Full Name,Employee Number,Email Address,Cellphone Number
+Charlotte Osborne,1005,charlotteosborne@acme.com,+27 55 760 177
+Marie Walters,1006,mariewalters@acme.com,+27 20 918 6908
+Leonard Gill,1008,leonardgill@acme.com,+27 55 525 585
+Enrique Thomas,1009,enriquethomas@acme.com,+27 20 916 1335
+Omar Dunn,1010,omardunn@acme.com,
+Dewey George,1012,deweygeorge@acme.com,+27 55 260 127
+Rudy Lewis,1013,rudylewis@acme.com,
+Neal French,1015,nealfrench@acme.com,+27 20 919 4882
