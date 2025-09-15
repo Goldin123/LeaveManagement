@@ -54,7 +54,7 @@ public class RegisterUserHandlerTests
 
         // Hash + token
         hasher.Setup(h => h.Hash("pw")).Returns(("hash", "salt"));
-        jwt.Setup(j => j.CreateToken(It.IsAny<Guid>(), "dev@acme.com", roles, null))
+        jwt.Setup(j => j.CreateToken(It.IsAny<Guid>(), "dev@acme.com","name", roles, null))
            .Returns("jwt-token");
 
         // Create success

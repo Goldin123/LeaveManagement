@@ -26,7 +26,7 @@ public sealed class LoginUserHandler(
         if (!hasher.Verify(cmd.Password, u.PasswordHash, u.PasswordSalt))
             return Result<string>.Failure("Invalid credentials.");
 
-        var token = jwt.CreateToken(u.Id, u.Email, u.Roles);
+        var token = jwt.CreateToken(u.Id, u.Email,u.FullName, u.Roles);
         return Result<string>.Success(token);
     }
 }

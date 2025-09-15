@@ -39,7 +39,7 @@ public sealed class RegisterUserHandler(
         if (!created.IsSuccess) return Result<string>.Failure(created.Error!);
 
         // 4) Issue JWT with your service
-        var token = jwt.CreateToken(u.Id, u.Email, u.Roles);
+        var token = jwt.CreateToken(u.Id, u.Email,u.FullName, u.Roles);
         return Result<string>.Success(token);
     }
 }

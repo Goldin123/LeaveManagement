@@ -9,7 +9,7 @@ namespace LeaveMgmt.Infrastructure.Security;
 
 internal sealed class JwtTokenService(IConfiguration config) : IJwtTokenService
 {
-    public string CreateToken(Guid userId, string email, IEnumerable<string> roles, TimeSpan? lifetime = null)
+    public string CreateToken(Guid userId, string email, string fullName, IEnumerable<string> roles, TimeSpan? lifetime = null)
     {
         var issuer = config["Jwt:Issuer"] ?? "leave-mgmt";
         var audience = config["Jwt:Audience"] ?? "leave-mgmt-clients";
@@ -21,11 +21,13 @@ internal sealed class JwtTokenService(IConfiguration config) : IJwtTokenService
         );
 
         var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new(ClaimTypes.NameIdentifier,   userId.ToString()),
-            new(ClaimTypes.Email,            email ?? string.Empty),
-        };
+    {
+        new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+        new(ClaimTypes.NameIdentifier,   userId.ToString()),
+        new(ClaimTypes.Email,            email ?? string.Empty),
+        new(ClaimTypes.Name,             fullName ?? string.Empty), // 👈 FullName added here
+        new("fullName",                  fullName ?? string.Empty)  // 👈 explicit custom claim
+    };
 
         foreach (var r in roles)
         {
@@ -44,4 +46,5 @@ internal sealed class JwtTokenService(IConfiguration config) : IJwtTokenService
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
 }

@@ -40,6 +40,13 @@ namespace LeaveMgmt.Website.Services
             catch (InvalidOperationException) { }
 
             var role = TryGetUserRoleFromJwt(Token);
+
+            dto.UserName = new JwtSecurityTokenHandler()
+                        .ReadJwtToken(Token)
+                        .Claims
+                        .FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
+                        ?? "Me";
+
             CurrentUser = new UserInfo { UserName = dto.UserName, Role = role ?? "Employee" };
 
             return ApiResult<LoginResponse>.Ok(dto);
@@ -63,7 +70,12 @@ namespace LeaveMgmt.Website.Services
                 {
                     Token = jwt.Value;
                     var role = TryGetUserRoleFromJwt(Token);
-                    CurrentUser ??= new UserInfo { UserName = "Me", Role = role ?? "Employee" };
+                    var name = new JwtSecurityTokenHandler()
+                        .ReadJwtToken(Token)
+                        .Claims
+                        .FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
+                        ?? "Me";
+                    CurrentUser ??= new UserInfo { UserName = name, Role = role ?? "Employee" };
                 }
             }
             catch (InvalidOperationException) { }
