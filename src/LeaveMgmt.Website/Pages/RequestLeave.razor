@@ -1,0 +1,126 @@
+﻿@page "/request-leave"
+@using LeaveMgmt.Website.Models
+
+<h3>Request Leave</h3>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label">Leave Type</label>
+            <select class="form-select" @bind="SelectedLeaveTypeId">
+                @foreach (var lt in LeaveTypes)
+                {
+                    <option value="@lt.Id">@lt.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Leave From</label>
+            <input type="date" class="form-control" @bind="FromDate" @bind:after="RecalculateDays" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Leave To</label>
+            <input type="date" class="form-control" @bind="ToDate" @bind:after="RecalculateDays" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Number of Days</label>
+            <input type="text" class="form-control" readonly value="@NumberOfDays" />
+        </div>
+
+        <button class="btn btn-primary" @onclick="Submit">Submit</button>
+    </div>
+
+    <div class="col-md-6">
+        <h5>@StartOfMonth.ToString("MMMM yyyy")</h5>
+        <div class="calendar-grid">
+            @foreach (var day in CalendarDays)
+            {
+                var inRange = day >= FromDate && day <= ToDate;
+                <div class="calendar-cell @(inRange ? "bg-primary text-white" : "")">
+                    @day.Day
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private Guid SelectedLeaveTypeId = Guid.Parse("C34DE22D-DBEA-40AC-84C4-F1B5A4F335C3"); // default Annual
+    private DateTime FromDate = DateTime.Today;
+    private DateTime ToDate = DateTime.Today;
+    private int NumberOfDays;
+    private bool IsSubmitting;
+
+    private DateTime StartOfMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private List<DateTime> CalendarDays = new();
+
+    private List<DateTime> Holidays = new()
+    {
+        new DateTime(DateTime.Today.Year, 1, 1),   // New Year
+        new DateTime(DateTime.Today.Year, 12, 25) // Christmas
+    };
+
+    private List<LeaveType> LeaveTypes = new()
+    {
+        new LeaveType { Id = Guid.Parse("C34DE22D-DBEA-40AC-84C4-F1B5A4F335C3"), Name = "Annual" },
+        new LeaveType { Id = Guid.Parse("822DFD3C-FF3A-458A-85EA-1BA32F5DB32D"), Name = "Sick" },
+        new LeaveType { Id = Guid.Parse("4731EE57-627D-4639-B1DE-10E47DF45DC6"), Name = "Unpaid" }
+    };
+
+    protected override void OnInitialized()
+    {
+        BuildCalendar();
+        RecalculateDays();
+    }
+
+    private void BuildCalendar()
+    {
+        CalendarDays.Clear();
+        var daysInMonth = DateTime.DaysInMonth(StartOfMonth.Year, StartOfMonth.Month);
+
+        for (int d = 1; d <= daysInMonth; d++)
+        {
+            CalendarDays.Add(new DateTime(StartOfMonth.Year, StartOfMonth.Month, d));
+        }
+    }
+
+    private void RecalculateDays()
+    {
+        if (ToDate < FromDate)
+        {
+            NumberOfDays = 0;
+            return;
+        }
+
+        int totalDays = 0;
+        for (var day = FromDate; day <= ToDate; day = day.AddDays(1))
+        {
+            if (day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+                continue;
+            if (Holidays.Any(h => h.Date == day.Date))
+                continue;
+
+            totalDays++;
+        }
+
+        NumberOfDays = totalDays;
+    }
+
+
+    private async Task Submit()
+    {
+        IsSubmitting = true;
+        // TODO: call LeaveRequestService.CreateAsync with SelectedLeaveTypeId, FromDate, ToDate
+        await Task.Delay(500);
+        IsSubmitting = false;
+    }
+
+    private class LeaveType
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+}

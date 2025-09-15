@@ -7,6 +7,7 @@ public sealed class SubmitLeaveRequest
     [Required] public Guid LeaveTypeId { get; set; }
     [Required] public DateTime StartDate { get; set; }
     [Required] public DateTime EndDate { get; set; }
+    public int Days { get; set; }
     public string? Reason { get; set; }
 }
 
