@@ -1,0 +1,29 @@
+﻿@* LeaveMgmt.Web/App.razor *@
+@using Microsoft.AspNetCore.Components.Routing
+<HeadContent>
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="css/site.css" rel="stylesheet" />
+</HeadContent>
+
+<HeadOutlet />
+
+<Router AppAssembly="@typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData"
+                   DefaultLayout="typeof(LeaveMgmt.Web.Shared.MainLayout)" />
+        @* optional focus helper:
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        *@
+    </Found>
+
+    <NotFound>
+        <LayoutView Layout="typeof(LeaveMgmt.Web.Shared.MainLayout)">
+            <MudPaper Class="pa-6">
+                <MudText Typo="Typo.h5">Not found</MudText>
+                <MudText>The page you're looking for doesn't exist.</MudText>
+            </MudPaper>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+<script src="_content/MudBlazor/MudBlazor.min.js"></script>

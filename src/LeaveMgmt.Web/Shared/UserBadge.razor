@@ -1,0 +1,28 @@
+﻿@inject AuthService Auth
+@inject NavigationManager Nav
+
+<MudMenu AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
+    <ActivatorContent>
+        <MudChip T="string" Variant="Variant.Outlined">@Display</MudChip>
+    </ActivatorContent>
+    <ChildContent>
+        <MudMenuItem Disabled="true">@RoleText</MudMenuItem>
+        <MudDivider />
+        <MudMenuItem Href="/login">Login</MudMenuItem>
+        <MudMenuItem Href="/register">Register</MudMenuItem>
+        <MudMenuItem OnClick="Logout">Logout</MudMenuItem>
+    </ChildContent>
+</MudMenu>
+
+@code {
+    protected override async Task OnInitializedAsync() => await Auth.InitializeAsync();
+
+    private string Display => string.IsNullOrWhiteSpace(Auth.CurrentUser?.UserName) ? "Guest" : Auth.CurrentUser!.UserName;
+    private string RoleText => string.IsNullOrWhiteSpace(Auth.CurrentUser?.Role) ? "Not signed in" : $"Role: {Auth.CurrentUser!.Role}";
+
+    private async Task Logout()
+    {
+        await Auth.LogoutAsync();
+        Nav.NavigateTo("/", true);
+    }
+}

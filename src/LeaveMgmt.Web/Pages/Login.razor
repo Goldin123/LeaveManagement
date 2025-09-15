@@ -1,0 +1,28 @@
+﻿@page "/login"
+
+@inject AuthService Auth
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<MudPaper Class="pa-6" MaxWidth="420px" Style="margin:auto;">
+    <MudText Typo="Typo.h5" Class="mb-4">Login</MudText>
+    <EditForm Model="_vm" OnValidSubmit="Submit">
+        <DataAnnotationsValidator />
+        <MudTextField @bind-Value="_vm.Email" Label="Email" Required="true" />
+        <MudTextField @bind-Value="_vm.Password" Label="Password" InputType="InputType.Password" Required="true" />
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" FullWidth="true">
+            Sign in
+        </MudButton>
+    </EditForm>
+</MudPaper>
+
+@code {
+    private LoginBody _vm = new();
+
+    private async Task Submit()
+    {
+        var res = await Auth.LoginAsync(_vm);
+        if (!res.Success) { Snackbar.Add(res.Error ?? "Login failed", Severity.Error); return; }
+        Nav.NavigateTo("/");
+    }
+}

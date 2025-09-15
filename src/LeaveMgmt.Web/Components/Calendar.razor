@@ -1,0 +1,18 @@
+﻿<MudDateRangePicker @bind-DateRange="_range"
+                    DisableToolbar="false"
+                    PickerVariant="PickerVariant.Static"
+                    Elevation="0"
+                    Class="full-height"
+                    OnClosed="Notify" />
+
+@code {
+    [Parameter] public EventCallback<(DateOnly? Start, DateOnly? End)> OnRangeSelected { get; set; }
+    private DateRange _range = new(DateTime.Today, DateTime.Today.AddDays(1));
+
+    private async Task Notify()
+    {
+        var s = _range.Start.HasValue ? DateOnly.FromDateTime(_range.Start.Value) : (DateOnly?)null;
+        var e = _range.End.HasValue ? DateOnly.FromDateTime(_range.End.Value) : (DateOnly?)null;
+        await OnRangeSelected.InvokeAsync((s, e));
+    }
+}
