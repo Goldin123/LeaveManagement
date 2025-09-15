@@ -5,6 +5,7 @@
 
 <div class="row">
     <div class="col-md-6">
+        <!-- Leave Type -->
         <div class="mb-3">
             <label class="form-label">Leave Type</label>
             <select class="form-select" @bind="SelectedLeaveTypeId">
@@ -15,16 +16,19 @@
             </select>
         </div>
 
+        <!-- From Date -->
         <div class="mb-3">
             <label class="form-label">Leave From</label>
             <input type="date" class="form-control" @bind="FromDate" @bind:after="RecalculateDays" />
         </div>
 
+        <!-- To Date -->
         <div class="mb-3">
             <label class="form-label">Leave To</label>
             <input type="date" class="form-control" @bind="ToDate" @bind:after="RecalculateDays" />
         </div>
 
+        <!-- Number of Days -->
         <div class="mb-3">
             <label class="form-label">Number of Days</label>
             <input type="text" class="form-control" readonly value="@NumberOfDays" />
@@ -33,14 +37,23 @@
         <button class="btn btn-primary" @onclick="Submit">Submit</button>
     </div>
 
+    <!-- Calendar -->
     <div class="col-md-6">
-        <h5>@StartOfMonth.ToString("MMMM yyyy")</h5>
-        <div class="calendar-grid">
-            @foreach (var day in CalendarDays)
+        <h5>Calendar</h5>
+        <div class="calendar">
+            @foreach (var month in CalendarMonths)
             {
-                var inRange = day >= FromDate && day <= ToDate;
-                <div class="calendar-cell @(inRange ? "bg-primary text-white" : "")">
-                    @day.Day
+                <div class="calendar-month mb-3">
+                    <h6>@month.Key.ToString("MMMM yyyy")</h6>
+                    <div class="calendar-grid">
+                        @foreach (var day in month.Value)
+                        {
+                            var inRange = day >= FromDate && day <= ToDate;
+                            <div class="calendar-cell @(inRange ? "bg-primary text-white" : "bg-light")">
+                                @day.Day
+                            </div>
+                        }
+                    </div>
                 </div>
             }
         </div>
@@ -54,8 +67,7 @@
     private int NumberOfDays;
     private bool IsSubmitting;
 
-    private DateTime StartOfMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
-    private List<DateTime> CalendarDays = new();
+    private Dictionary<DateTime, List<DateTime>> CalendarMonths = new();
 
     private List<DateTime> Holidays = new()
     {
@@ -78,12 +90,23 @@
 
     private void BuildCalendar()
     {
-        CalendarDays.Clear();
-        var daysInMonth = DateTime.DaysInMonth(StartOfMonth.Year, StartOfMonth.Month);
+        CalendarMonths.Clear();
 
-        for (int d = 1; d <= daysInMonth; d++)
+        if (ToDate < FromDate)
+            return;
+
+        var current = new DateTime(FromDate.Year, FromDate.Month, 1);
+
+        while (current <= ToDate)
         {
-            CalendarDays.Add(new DateTime(StartOfMonth.Year, StartOfMonth.Month, d));
+            var daysInMonth = DateTime.DaysInMonth(current.Year, current.Month);
+            var days = Enumerable.Range(1, daysInMonth)
+                                 .Select(d => new DateTime(current.Year, current.Month, d))
+                                 .ToList();
+
+            CalendarMonths[current] = days;
+
+            current = current.AddMonths(1);
         }
     }
 
@@ -92,6 +115,7 @@
         if (ToDate < FromDate)
         {
             NumberOfDays = 0;
+            CalendarMonths.Clear();
             return;
         }
 
@@ -107,8 +131,9 @@
         }
 
         NumberOfDays = totalDays;
-    }
 
+        BuildCalendar();
+    }
 
     private async Task Submit()
     {
