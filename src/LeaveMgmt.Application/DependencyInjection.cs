@@ -10,7 +10,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddSingleton<IMediator, Mediator>();
+        services.AddScoped<IMediator, Mediator>();
 
         var asm = Assembly.GetExecutingAssembly();
 
@@ -33,7 +33,7 @@ public static class DependencyInjection
         foreach (var v in validatorTypes) services.AddScoped(v.Service, v.Impl);
 
         // Pipeline behaviors (order: auth, then validation, then handler)
-        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
+        //services.AddScoped(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         return services;

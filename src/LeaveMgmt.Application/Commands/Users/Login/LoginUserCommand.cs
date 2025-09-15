@@ -7,6 +7,8 @@ namespace LeaveMgmt.Application.Commands.Users.Login;
 
 public sealed record LoginUserCommand(string Email, string Password) : IRequest<Result<string>>;
 
+public interface IAllowAnonymous { }
+
 public sealed class LoginUserHandler(
     IUserRepository users,
     IPasswordHasher hasher,

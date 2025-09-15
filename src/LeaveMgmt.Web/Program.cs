@@ -9,7 +9,9 @@ using MudBlazor.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Blazor + MudBlazor
-builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+
 builder.Services.AddMudServices();
 
 // Auth (simple, client-side only for now)
@@ -23,7 +25,7 @@ builder.Services.AddHttpClient("api", c =>
     c.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7186/");
 });
 
-// ?? Register the services used by components (this fixes your error)
+// Register the services used by components
 builder.Services.AddSiteServices();
 builder.Services.AddAppServices(builder.Configuration);
 builder.Services.AddScoped<ProtectedLocalStorage>();

@@ -1,0 +1,23 @@
+﻿@inherits LayoutComponentBase
+
+@using MudBlazor
+
+<PageTitle>Leave Management · Sign in</PageTitle>
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div class="auth-shell">
+    <MudAppBar Elevation="0" Dense="true" Color="Color.Primary" Class="auth-appbar">
+        <MudText Typo="Typo.h6" Class="font-semibold">Leave Management</MudText>
+    </MudAppBar>
+
+    <main class="auth-body">
+        <div class="auth-card">@Body</div>
+    </main>
+
+    <footer class="auth-footer">
+        <MudText Typo="Typo.caption" Class="opacity-70">© @DateTime.Now.Year Leave Management</MudText>
+    </footer>
+</div>

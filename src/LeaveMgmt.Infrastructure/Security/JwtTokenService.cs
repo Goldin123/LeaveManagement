@@ -14,14 +14,21 @@ internal sealed class JwtTokenService(IConfiguration config) : IJwtTokenService
         var issuer = config["Jwt:Issuer"] ?? "leave-mgmt";
         var audience = config["Jwt:Audience"] ?? "leave-mgmt-clients";
         var key = config["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key missing");
-        var creds = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-                                              SecurityAlgorithms.HmacSha256);
 
+        var creds = new SigningCredentials(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+            SecurityAlgorithms.HmacSha256
+        );
+
+        // Include both standard subject (sub) and NameIdentifier so either can be read client-side.
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, userId.ToString()),
-            new(ClaimTypes.Email, email)
+            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new(ClaimTypes.NameIdentifier,   userId.ToString()),
+            new(ClaimTypes.Email,            email ?? string.Empty),
         };
+
+        // Roles (CSV already split at caller or pass IEnumerable<string>)
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
         var token = new JwtSecurityToken(

@@ -1,4 +1,6 @@
-﻿using System.Net.Http.Json;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Json;
+using System.Security.Claims;
 using LeaveMgmt.Web.Models;
 
 namespace LeaveMgmt.Web.Services;
@@ -32,6 +34,7 @@ public sealed class LeaveRequestService
         var id = await resp.Content.ReadFromJsonAsync<Guid>();
         return ApiResult<Guid>.Ok(id);
     }
+
     public async Task<List<LeaveRequestListItem>> GetByEmployeeAsync(Guid employeeId)
     {
         var c = Client();
@@ -39,12 +42,13 @@ public sealed class LeaveRequestService
         var data = await c.GetFromJsonAsync<List<LeaveRequestListItem>>(url);
         return data ?? new();
     }
+
+    // Keeps the same signature; now derives the Guid from JWT using a proper parser.
     public async Task<List<LeaveRequestListItem>> GetByEmployeeAsync()
     {
-        // Derive employeeId from the JWT (no model/property changes)
         var employeeId = TryGetUserIdFromJwt(_auth.Token);
         if (employeeId == Guid.Empty)
-            return new(); // or throw if you prefer
+            return new(); // or throw, keeping existing behavior lightweight
 
         return await GetByEmployeeAsync(employeeId);
     }
@@ -54,46 +58,23 @@ public sealed class LeaveRequestService
         if (string.IsNullOrWhiteSpace(jwt))
             return Guid.Empty;
 
-        var parts = jwt.Split('.');
-        if (parts.Length < 2)
-            return Guid.Empty;
-
-        // Decode payload (middle) and read common claim names
         try
         {
-            var payloadJson = System.Text.Encoding.UTF8.GetString(Base64UrlDecode(parts[1]));
-            using var doc = System.Text.Json.JsonDocument.Parse(payloadJson);
+            var token = new JwtSecurityTokenHandler().ReadJwtToken(jwt);
 
-            // Try typical claim keys — adjust order if your token differs
-            if (doc.RootElement.TryGetProperty("sub", out var sub) &&
-                Guid.TryParse(sub.GetString(), out var g1))
-                return g1;
+            // Try common claim types in order: 'sub', NameIdentifier, or custom fallbacks.
+            string? id =
+                token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value ??
+                token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ??
+                token.Claims.FirstOrDefault(c => c.Type == "userId")?.Value ??
+                token.Claims.FirstOrDefault(c => c.Type == "employeeId")?.Value;
 
-            if (doc.RootElement.TryGetProperty("userId", out var uid) &&
-                Guid.TryParse(uid.GetString(), out var g2))
-                return g2;
-
-            if (doc.RootElement.TryGetProperty("employeeId", out var eid) &&
-                Guid.TryParse(eid.GetString(), out var g3))
-                return g3;
+            return Guid.TryParse(id, out var g) ? g : Guid.Empty;
         }
         catch
         {
-            // ignore and return empty
+            return Guid.Empty;
         }
-
-        return Guid.Empty;
-    }
-
-    private static byte[] Base64UrlDecode(string input)
-    {
-        string s = input.Replace('-', '+').Replace('_', '/');
-        switch (s.Length % 4)
-        {
-            case 2: s += "=="; break;
-            case 3: s += "="; break;
-        }
-        return Convert.FromBase64String(s);
     }
 
     public async Task<ApiResult<bool>> ApproveAsync(ApproveRequest dto)
