@@ -36,7 +36,6 @@ public class RegisterUserHandlerTests
         res.Error.Should().Contain("not authorized");
     }
 
-    [Fact] // Unit
     public async Task Register_Should_Create_User_And_Return_JWT()
     {
         var users = new Mock<IUserRepository>();
