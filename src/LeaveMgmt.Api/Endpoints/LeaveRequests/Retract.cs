@@ -2,12 +2,10 @@
 using LeaveMgmt.Application.Abstractions;
 using LeaveMgmt.Application.Commands.LeaveRequests.RetractLeave;
 using LeaveMgmt.Domain;
-using Microsoft.AspNetCore.Http;
 
 namespace LeaveMgmt.Api.Endpoints.LeaveRequests;
 
-public sealed class RetractEndpoint(IMediator mediator)
-    : Endpoint<(LeaveMgmt.Api.Endpoints.IdRoute Route, LeaveMgmt.Api.Endpoints.RetractBody Body)>
+public sealed class RetractEndpoint(IMediator mediator) : EndpointWithoutRequest
 {
     public override void Configure()
     {
@@ -16,15 +14,33 @@ public sealed class RetractEndpoint(IMediator mediator)
         Summary(s => s.Summary = "Retract a leave request by the owner");
     }
 
-    public override async Task HandleAsync((LeaveMgmt.Api.Endpoints.IdRoute Route, LeaveMgmt.Api.Endpoints.RetractBody Body) req, CancellationToken ct)
+    public override async Task HandleAsync(CancellationToken ct)
     {
-        var result = await mediator.Send<Result>(new RetractLeaveCommand(req.Route.Id, req.Body.EmployeeId), ct);
+        var id = Route<Guid>("Id");
+        var body = await HttpContext.Request.ReadFromJsonAsync<RetractBody>(ct);
 
-        HttpContext.Response.StatusCode = result.IsSuccess
-            ? StatusCodes.Status204NoContent
-            : StatusCodes.Status400BadRequest;
+        if (body is null)
+        {
+            HttpContext.Response.StatusCode = 400;
+            await HttpContext.Response.WriteAsJsonAsync(new RetractResponse(false, "Missing body"), ct);
+            return;
+        }
 
-        if (!result.IsSuccess)
-            await HttpContext.Response.WriteAsJsonAsync(new { error = result.Error }, ct);
+        var cmd = new RetractLeaveCommand(id, body.EmployeeId);
+        var result = await mediator.Send<Result>(cmd, ct);
+
+        if (result.IsSuccess)
+        {
+            HttpContext.Response.StatusCode = 200;
+            await HttpContext.Response.WriteAsJsonAsync(new RetractResponse(true, null), ct);
+        }
+        else
+        {
+            HttpContext.Response.StatusCode = 400;
+            await HttpContext.Response.WriteAsJsonAsync(new RetractResponse(false, result.Error), ct);
+        }
     }
 }
+
+public record RetractBody(Guid EmployeeId);
+public record RetractResponse(bool Success, string? Error);

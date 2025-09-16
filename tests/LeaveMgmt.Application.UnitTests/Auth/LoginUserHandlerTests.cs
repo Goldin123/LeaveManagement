@@ -48,7 +48,7 @@ public class LoginUserHandlerTests
         hasher.Setup(h => h.Verify("pw", "hash", "salt")).Returns(true);
 
         // NOTE: pass the optional trailing parameter explicitly (null) to avoid CS0854.
-        jwt.Setup(j => j.CreateToken(u.Id, "dev@acme.com", u.Roles, null))
+        jwt.Setup(j => j.CreateToken(u.Id, "dev@acme.com", "name",u.Roles, null))
            .Returns("jwt-token");
 
         var sut = new LoginUserHandler(users.Object, hasher.Object, jwt.Object);

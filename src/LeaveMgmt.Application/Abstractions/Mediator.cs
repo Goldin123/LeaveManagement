@@ -1,58 +1,62 @@
-﻿namespace LeaveMgmt.Application.Abstractions;
-
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
-// ----------- Contracts -----------
-public interface IRequest<TResponse> { }
-
-public interface IRequestHandler<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+namespace LeaveMgmt.Application.Abstractions
 {
-    Task<TResponse> Handle(TRequest request, CancellationToken ct);
-}
+    public interface IRequest<out TResponse> { }
 
-public interface IMediator
-{
-    Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken ct = default);
-}
-
-
-// ----------- Mediator with behaviors -----------
-public sealed class Mediator : IMediator
-{
-    private readonly IServiceProvider _sp;
-    public Mediator(IServiceProvider sp) => _sp = sp;
-
-    public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken ct = default)
+    public interface IRequestHandler<in TRequest, TResponse>
+        where TRequest : IRequest<TResponse>
     {
-        var requestType = request.GetType();
+        Task<TResponse> Handle(TRequest request, CancellationToken ct);
+    }
 
-        // Resolve the handler: IRequestHandler<TRequest,TResponse>
-        var handlerType = typeof(IRequestHandler<,>).MakeGenericType(requestType, typeof(TResponse));
-        var handler = _sp.GetRequiredService(handlerType);
+    //public interface IPipelineBehavior<in TRequest, TResponse>
+    //    where TRequest : IRequest<TResponse>
+    //{
+    //    Task<TResponse> Handle(TRequest request, CancellationToken ct, Func<Task<TResponse>> next);
+    //}
 
-        // Resolve all behaviors: IEnumerable<IPipelineBehavior<TRequest,TResponse>>
-        var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(requestType, typeof(TResponse));
-        var behaviors = _sp.GetServices(behaviorType).ToList();
+    public interface IMediator
+    {
+        Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken ct = default);
+    }
 
-        // Terminal delegate that invokes the handler
-        Task<TResponse> InvokeHandler()
-            => (Task<TResponse>)handlerType
-                .GetMethod(nameof(IRequestHandler<IRequest<TResponse>, TResponse>.Handle))!
-                .Invoke(handler, new object?[] { request, ct })!;
+    public sealed class Mediator : IMediator
+    {
+        private readonly IServiceProvider _sp;
+        public Mediator(IServiceProvider sp) => _sp = sp;
 
-        // Fold behaviors in reverse order so they wrap around the handler
-        Func<Task<TResponse>> next = InvokeHandler;
-        for (int i = behaviors.Count - 1; i >= 0; i--)
+        public async Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken ct = default)
         {
-            var b = behaviors[i];
-            var method = behaviorType.GetMethod(nameof(IPipelineBehavior<IRequest<TResponse>, TResponse>.Handle))!;
-            var currentNext = next;
-            next = () => (Task<TResponse>)method.Invoke(b, new object?[] { request, ct, currentNext })!;
-        }
+            using var scope = _sp.CreateScope(); // keep it alive until after handler finishes
+            var provider = scope.ServiceProvider;
 
-        return next();
+            var requestType = request.GetType();
+            var handlerType = typeof(IRequestHandler<,>).MakeGenericType(requestType, typeof(TResponse));
+            var handler = provider.GetRequiredService(handlerType);
+
+            var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(requestType, typeof(TResponse));
+            var behaviors = provider.GetServices(behaviorType).ToList();
+
+            Task<TResponse> InvokeHandler()
+                => (Task<TResponse>)handlerType
+                    .GetMethod(nameof(IRequestHandler<IRequest<TResponse>, TResponse>.Handle))!
+                    .Invoke(handler, new object?[] { request, ct })!;
+
+            Func<Task<TResponse>> next = InvokeHandler;
+            for (int i = behaviors.Count - 1; i >= 0; i--)
+            {
+                var b = behaviors[i];
+                var method = behaviorType.GetMethod(nameof(IPipelineBehavior<IRequest<TResponse>, TResponse>.Handle))!;
+                var currentNext = next;
+                next = () => (Task<TResponse>)method.Invoke(b, new object?[] { request, ct, currentNext })!;
+            }
+
+            return await next(); // scope disposed only after this finishes
+        }
     }
 }

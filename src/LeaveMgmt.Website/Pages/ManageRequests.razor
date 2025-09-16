@@ -1,0 +1,94 @@
+﻿@page "/manage-requests"
+@using LeaveMgmt.Website.Models
+@using LeaveMgmt.Website.Services
+@inject LeaveRequestService LeaveRequests
+@inject AuthService Auth
+
+<h3>Manage Leave Requests</h3>
+
+<div class="mb-3">
+    <label>Select Employee</label>
+    <select class="form-select"
+            @bind="SelectedEmployeeId"
+            @bind:after="LoadRequests">
+        <option value="">-- Select --</option>
+        @foreach (var u in Users)
+        {
+            <option value="@u.Id">@u.FullName (@u.Email)</option>
+        }
+    </select>
+</div>
+
+@if (Requests.Count > 0)
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Employee</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var req in Requests)
+            {
+                <tr>
+                    <td>@req.EmployeeName</td>
+                    <td>@req.StartDate.ToString("yyyy/MM/dd")</td>
+                    <td>@req.EndDate.ToString("yyyy/MM/dd")</td>
+                    <td>@req.LeaveTypeName</td>
+                    <td>@req.Status</td>
+                    <td>
+                        @if (req.Status == "Submitted")
+                        {
+                            <button class="btn btn-success btn-sm me-2" @onclick="() => Approve(req.Id)">Approve</button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => Reject(req.Id)">Reject</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<UserDto> Users = new();
+    private Guid SelectedEmployeeId;
+    private List<LeaveRequestListItem> Requests = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Users = await LeaveRequests.GetAllUsersAsync();
+    }
+
+    private async Task LoadRequests()
+    {
+        if (SelectedEmployeeId != Guid.Empty)
+        {
+            Requests = await LeaveRequests.GetByEmployeeAsync(SelectedEmployeeId);
+        }
+        else
+        {
+            Requests.Clear();
+        }
+    }
+
+    private async Task Approve(Guid id)
+    {
+        var res = new ApproveRequest { Id = id};
+        var result = await LeaveRequests.ApproveAsync(res);
+        if (result.Success)
+            await LoadRequests();
+    }
+
+    private async Task Reject(Guid id)
+    {
+		var res = new RejectRequest { Id = id };
+        var result = await LeaveRequests.RejectAsync(res);
+        if (result.Success)
+            await LoadRequests();
+    }
+}

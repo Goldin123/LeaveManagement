@@ -9,20 +9,31 @@ namespace LeaveMgmt.Infrastructure.Security;
 
 internal sealed class JwtTokenService(IConfiguration config) : IJwtTokenService
 {
-    public string CreateToken(Guid userId, string email, IEnumerable<string> roles, TimeSpan? lifetime = null)
+    public string CreateToken(Guid userId, string email, string fullName, IEnumerable<string> roles, TimeSpan? lifetime = null)
     {
         var issuer = config["Jwt:Issuer"] ?? "leave-mgmt";
         var audience = config["Jwt:Audience"] ?? "leave-mgmt-clients";
         var key = config["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key missing");
-        var creds = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-                                              SecurityAlgorithms.HmacSha256);
+
+        var creds = new SigningCredentials(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+            SecurityAlgorithms.HmacSha256
+        );
 
         var claims = new List<Claim>
+    {
+        new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+        new(ClaimTypes.NameIdentifier,   userId.ToString()),
+        new(ClaimTypes.Email,            email ?? string.Empty),
+        new(ClaimTypes.Name,             fullName ?? string.Empty), // 👈 FullName added here
+        new("fullName",                  fullName ?? string.Empty)  // 👈 explicit custom claim
+    };
+
+        foreach (var r in roles)
         {
-            new(ClaimTypes.NameIdentifier, userId.ToString()),
-            new(ClaimTypes.Email, email)
-        };
-        claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+            claims.Add(new Claim(ClaimTypes.Role, r));
+            claims.Add(new Claim("role", r)); // explicit role claim for client-side parsing
+        }
 
         var token = new JwtSecurityToken(
             issuer: issuer,
@@ -35,4 +46,5 @@ internal sealed class JwtTokenService(IConfiguration config) : IJwtTokenService
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
 }

@@ -2,12 +2,10 @@
 using LeaveMgmt.Application.Abstractions;
 using LeaveMgmt.Application.Commands.LeaveRequests.ApproveLeave;
 using LeaveMgmt.Domain;
-using Microsoft.AspNetCore.Http;
 
 namespace LeaveMgmt.Api.Endpoints.LeaveRequests;
 
-public sealed class ApproveEndpoint(IMediator mediator)
-    : Endpoint<(LeaveMgmt.Api.Endpoints.IdRoute Route, LeaveMgmt.Api.Endpoints.ApproveBody Body)>
+public sealed class ApproveEndpoint(IMediator mediator) : EndpointWithoutRequest
 {
     public override void Configure()
     {
@@ -16,15 +14,33 @@ public sealed class ApproveEndpoint(IMediator mediator)
         Summary(s => s.Summary = "Approve a leave request");
     }
 
-    public override async Task HandleAsync((LeaveMgmt.Api.Endpoints.IdRoute Route, LeaveMgmt.Api.Endpoints.ApproveBody Body) req, CancellationToken ct)
+    public override async Task HandleAsync(CancellationToken ct)
     {
-        var result = await mediator.Send<Result>(new ApproveLeaveCommand(req.Route.Id, req.Body.ManagerId), ct);
+        var id = Route<Guid>("Id"); // route binding
+        var body = await HttpContext.Request.ReadFromJsonAsync<ApproveBody>(ct);
 
-        HttpContext.Response.StatusCode = result.IsSuccess
-            ? StatusCodes.Status204NoContent
-            : StatusCodes.Status400BadRequest;
+        if (body is null)
+        {
+            HttpContext.Response.StatusCode = 400;
+            await HttpContext.Response.WriteAsJsonAsync(new ApproveResponse(false, "Missing body"), ct);
+            return;
+        }
 
-        if (!result.IsSuccess)
-            await HttpContext.Response.WriteAsJsonAsync(new { error = result.Error }, ct);
+        var cmd = new ApproveLeaveCommand(id, body.ManagerId);
+        var result = await mediator.Send<Result>(cmd, ct);
+
+        if (result.IsSuccess)
+        {
+            HttpContext.Response.StatusCode = 200;
+            await HttpContext.Response.WriteAsJsonAsync(new ApproveResponse(true, null), ct);
+        }
+        else
+        {
+            HttpContext.Response.StatusCode = 400;
+            await HttpContext.Response.WriteAsJsonAsync(new ApproveResponse(false, result.Error), ct);
+        }
     }
 }
+
+public record ApproveBody(Guid ManagerId);
+public record ApproveResponse(bool Success, string? Error);

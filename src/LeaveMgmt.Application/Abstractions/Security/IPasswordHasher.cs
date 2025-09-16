@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Application/Abstractions/Security/IPasswordHasher.cs
-namespace LeaveMgmt.Application.Abstractions.Security;
+﻿namespace LeaveMgmt.Application.Abstractions.Security;
 
 public interface IPasswordHasher
 {

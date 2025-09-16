@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Application/Common/Roles.cs
-namespace LeaveMgmt.Application.Common;
+﻿namespace LeaveMgmt.Application.Common;
 
 public static class Roles
 {

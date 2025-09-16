@@ -1,5 +1,4 @@
-﻿// File: src/LeaveMgmt.Application/Commands/Auth/RegisterUser/RegisterUserCommand.cs
-using LeaveMgmt.Application.Abstractions;
+﻿using LeaveMgmt.Application.Abstractions;
 using LeaveMgmt.Application.Abstractions.Identity;
 using LeaveMgmt.Application.Abstractions.Repositories;
 using LeaveMgmt.Application.Abstractions.Security;
@@ -14,7 +13,7 @@ public sealed record RegisterUserCommand(string Email, string FullName, string P
 public sealed class RegisterUserHandler(
     IUserRepository users,
     IPasswordHasher hasher,
-    IJwtTokenService jwt,                     // your interface name :contentReference[oaicite:4]{index=4}
+    IJwtTokenService jwt,                     
     ITeamRoster roster)
     : IRequestHandler<RegisterUserCommand, Result<string>>
 {
@@ -27,7 +26,7 @@ public sealed class RegisterUserHandler(
             return Result<string>.Failure("This email is not authorized to register.");
 
         // 2) Must not exist already
-        var existing = await users.GetByEmailAsync(email, ct);          // your IUserRepository :contentReference[oaicite:5]{index=5}
+        var existing = await users.GetByEmailAsync(email, ct);          
         if (!existing.IsSuccess) return Result<string>.Failure(existing.Error!);
         if (existing.Value is not null) return Result<string>.Failure("Email already registered.");
 
@@ -39,7 +38,7 @@ public sealed class RegisterUserHandler(
         if (!created.IsSuccess) return Result<string>.Failure(created.Error!);
 
         // 4) Issue JWT with your service
-        var token = jwt.CreateToken(u.Id, u.Email, u.Roles);
+        var token = jwt.CreateToken(u.Id, u.Email,u.FullName, u.Roles);
         return Result<string>.Success(token);
     }
 }

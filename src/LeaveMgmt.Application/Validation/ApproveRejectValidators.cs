@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Application/Validation/ApproveRejectValidators.cs
-using FluentValidation;
+﻿using FluentValidation;
 using LeaveMgmt.Application.Commands.LeaveRequests.ApproveLeave;
 using LeaveMgmt.Application.Commands.LeaveRequests.RejectLeave;
 

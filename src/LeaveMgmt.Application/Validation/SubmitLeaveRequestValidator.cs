@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Application/Validation/SubmitLeaveRequestValidator.cs
-using FluentValidation;
+﻿using FluentValidation;
 using LeaveMgmt.Application.Commands.LeaveRequests.SubmitLeaveRequest;
 
 namespace LeaveMgmt.Application.Validation;

@@ -6,6 +6,7 @@ namespace LeaveMgmt.Domain.LeaveRequests;
 
 public sealed class LeaveRequest : Entity
 {
+
     public EmployeeId EmployeeId { get; private set; }
     public Guid LeaveTypeId { get; private set; }
     public DateRange Range { get; private set; }
@@ -21,15 +22,21 @@ public sealed class LeaveRequest : Entity
 
     public LeaveRequest(EmployeeId employeeId, LeaveType type, DateRange range, string reason)
     {
-        if (string.IsNullOrWhiteSpace(reason)) throw new DomainException("Reason is required.");
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new DomainException("Reason is required.");
+
+        Id = Guid.NewGuid();             // assign here
         EmployeeId = employeeId;
         LeaveTypeId = type.Id;
         Range = range;
         Reason = reason.Trim();
+        CreatedUtc = DateTime.UtcNow;    // assign here
+        Status = LeaveStatus.Draft;      // initial status
 
         if (range.Days > type.MaxDaysPerRequest)
             throw new DomainException($"Request exceeds max days ({type.MaxDaysPerRequest}).");
     }
+
 
     // Submit
     public DomainResult Submit()

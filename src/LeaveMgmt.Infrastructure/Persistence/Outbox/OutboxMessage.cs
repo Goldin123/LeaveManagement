@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Infrastructure/Persistence/Outbox/OutboxMessage.cs
-namespace LeaveMgmt.Infrastructure.Persistence.Outbox;
+﻿namespace LeaveMgmt.Infrastructure.Persistence.Outbox;
 public sealed class OutboxMessage
 {
     public Guid Id { get; init; } = Guid.NewGuid();

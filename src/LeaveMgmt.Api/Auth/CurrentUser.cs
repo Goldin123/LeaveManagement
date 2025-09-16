@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Api/Auth/CurrentUser.cs
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using LeaveMgmt.Application.Abstractions.Identity;
 
 namespace LeaveMgmt.Api.Auth;

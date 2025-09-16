@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Infrastructure.IntegrationTests/Outbox/OutboxCaptureTests.cs
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using LeaveMgmt.Domain.LeaveRequests;

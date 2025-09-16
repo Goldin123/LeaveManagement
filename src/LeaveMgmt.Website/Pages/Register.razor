@@ -1,0 +1,45 @@
+﻿@page "/register"
+@using LeaveMgmt.Website.Models
+@using LeaveMgmt.Website.Services
+@inject NavigationManager Nav
+@inject AuthService Auth
+@layout LeaveMgmt.Website.Shared.AuthLayout
+
+
+<h3>Register</h3>
+
+<EditForm Model="@_model" OnValidSubmit="OnSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="email">Email</label>
+        <InputText id="email" class="form-control" @bind-Value="_model.Email" />
+    </div>
+
+    <div class="mb-3">
+        <label for="password">Password</label>
+        <InputText id="password" type="password" class="form-control" @bind-Value="_model.Password" />
+    </div>
+
+    <button type="submit" class="btn btn-success">Register</button>
+    <button type="button" class="btn btn-link" @onclick="GoToLogin">Back to Login</button>
+</EditForm>
+
+@code {
+    private RegisterBody _model = new();
+
+    private async Task OnSubmit()
+    {
+        var ok = await Auth.RegisterAsync(_model);
+        if (ok!=null)
+        {
+            Nav.NavigateTo("/login");
+        }
+    }
+
+    private void GoToLogin()
+    {
+        Nav.NavigateTo("/login");
+    }
+}

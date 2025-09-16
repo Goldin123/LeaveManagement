@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Application/DTOs/LeaveRequestDto.cs
-using LeaveMgmt.Domain.LeaveRequests;
+﻿using LeaveMgmt.Domain.LeaveRequests;
 
 namespace LeaveMgmt.Application.DTOs;
 

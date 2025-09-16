@@ -1,0 +1,68 @@
+﻿@page "/dashboard"
+@using LeaveMgmt.Website.Models
+@using LeaveMgmt.Website.Services
+@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
+@inject LeaveRequestService LeaveRequests
+@inject AuthService Auth
+
+<h3>Dashboard</h3>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var req in Requests)
+        {
+            <tr>
+                <td>@req.StartDate.ToString("yyyy/MM/dd")</td>
+                <td>@req.EndDate.ToString("yyyy/MM/dd")</td>
+                <td>@req.LeaveTypeName</td>
+                <td>@req.Status</td>
+                <td>
+                    @if (req.Status == "Submitted")
+                    {
+                        <button class="btn btn-warning btn-sm" @onclick="() => Retract(req.Id)">
+                            Retract
+                        </button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<LeaveRequestListItem> Requests = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var employeeId = Helpers.Helpers.TryGetUserIdFromJwt(LoggedUser.Token);
+        if (employeeId != Guid.Empty)
+        {
+            Requests = await LeaveRequests.GetByEmployeeAsync(employeeId);
+        }
+    }
+
+    private async Task Retract(Guid id)
+    {
+        var retract = new RetractRequest { Id = id };
+        var result = await LeaveRequests.RetractAsync(retract);
+        if (result.Success)
+        {
+            var employeeId = Helpers.Helpers.TryGetUserIdFromJwt(LoggedUser.Token);
+
+            Requests = await LeaveRequests.GetByEmployeeAsync(employeeId);
+            StateHasChanged();
+        }
+    }
+
+}

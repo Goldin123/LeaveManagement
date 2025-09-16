@@ -1,11 +1,11 @@
-﻿// File: LeaveMgmt.Api/Endpoints/Contracts.cs
-namespace LeaveMgmt.Api.Endpoints;
+﻿namespace LeaveMgmt.Api.Endpoints;
 
 public sealed record SubmitLeaveRequestBody(
     Guid EmployeeId,
     Guid LeaveTypeId,
     DateOnly StartDate,
     DateOnly EndDate,
+    int? Days,
     string Reason);
 
 public sealed record ApproveBody(Guid ManagerId);
