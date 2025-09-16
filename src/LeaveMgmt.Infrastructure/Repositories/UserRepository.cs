@@ -20,4 +20,10 @@ public sealed class UserRepository(LeaveMgmtDbContext db) : IUserRepository
 
     public async Task<Result<User?>> GetByIdAsync(Guid id, CancellationToken ct = default)
         => Result<User?>.Success(await db.Users.FirstOrDefaultAsync(u => u.Id == id, ct));
+
+    public async Task<Result<IReadOnlyList<User>>> GetAllAsync(CancellationToken ct = default)
+    {
+        var list = await db.Users.ToListAsync(ct);
+        return Result<IReadOnlyList<User>>.Success(list);
+    }
 }

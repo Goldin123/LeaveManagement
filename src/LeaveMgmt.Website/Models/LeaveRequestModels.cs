@@ -17,7 +17,7 @@ public class SubmitLeaveResponse
 }
 
 
-public sealed class ApproveRequest { [Required] public Guid Id { get; set; } }
+public sealed class ApproveRequest { [Required] public Guid Id { get; set; } public Guid ManagerId { get; set; } }
 public sealed class RejectRequest { [Required] public Guid Id { get; set; } public string? Reason { get; set; } }
 public sealed class RetractRequest { [Required] public Guid Id { get; set; } }
 

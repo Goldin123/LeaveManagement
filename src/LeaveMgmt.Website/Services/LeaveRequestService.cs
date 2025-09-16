@@ -33,7 +33,7 @@ public sealed class LeaveRequestService
     public async Task<ApiResult<Guid>> SubmitAsync(SubmitLeaveRequest dto)
     {
         var c = Client();
-        var employeeId = TryGetUserIdFromJwt(LoggedUser.Token);
+        var employeeId = Helpers.Helpers.TryGetUserIdFromJwt(LoggedUser.Token);
         if (employeeId == Guid.Empty)
             return new();
         dto.EmployeeId = employeeId;
@@ -74,44 +74,35 @@ public sealed class LeaveRequestService
     // Overload that figures out the employeeId from the JWT
     public async Task<List<LeaveRequestListItem>> GetByEmployeeAsync()
     {
-        var employeeId = TryGetUserIdFromJwt(LoggedUser.Token);
+        var employeeId = Helpers.Helpers.TryGetUserIdFromJwt(LoggedUser.Token);
         if (employeeId == Guid.Empty)
             return new();
 
         return await GetByEmployeeAsync(employeeId);
     }
 
-    private static Guid TryGetUserIdFromJwt(string? jwt)
-    {
-        if (string.IsNullOrWhiteSpace(jwt))
-            return Guid.Empty;
-
-        try
-        {
-            var token = new JwtSecurityTokenHandler().ReadJwtToken(jwt);
-
-            string? id =
-                token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value ??
-                token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ??
-                token.Claims.FirstOrDefault(c => c.Type == "userId")?.Value ??
-                token.Claims.FirstOrDefault(c => c.Type == "employeeId")?.Value;
-
-            return Guid.TryParse(id, out var g) ? g : Guid.Empty;
-        }
-        catch
-        {
-            return Guid.Empty;
-        }
-    }
-
     public async Task<ApiResult<bool>> ApproveAsync(ApproveRequest dto)
     {
         var c = Client();
-        var resp = await c.PostAsJsonAsync("api/leave-requests/approve", dto);
+
+        // must include Id in the route
+        var url = $"api/leave-requests/{dto.Id}/approve";
+
+        // resolve manager id from JWT
+        var managerId = Helpers.Helpers.TryGetUserIdFromJwt(LoggedUser.Token);
+        if (managerId == Guid.Empty)
+            return ApiResult<bool>.Fail("Invalid manager identity.");
+
+        var payload = new { managerId };
+
+        var resp = await c.PostAsJsonAsync(url, payload);
+
         return resp.IsSuccessStatusCode
             ? ApiResult<bool>.Ok(true)
             : ApiResult<bool>.Fail(await resp.Content.ReadAsStringAsync());
     }
+
+
 
     public async Task<ApiResult<bool>> RejectAsync(RejectRequest dto)
     {
@@ -130,4 +121,29 @@ public sealed class LeaveRequestService
             ? ApiResult<bool>.Ok(true)
             : ApiResult<bool>.Fail(await resp.Content.ReadAsStringAsync());
     }
+
+    public async Task<List<LeaveRequestListItem>> GetAllAsync()
+    {
+        var c = Client();
+        var url = "api/leave-requests"; // assumes your API has a GET all endpoint
+        var data = await c.GetFromJsonAsync<List<LeaveRequestListItem>>(url) ?? new();
+
+        var types = await _leaveTypes.GetAsync();
+        foreach (var req in data)
+        {
+            var lt = types.FirstOrDefault(t => t.Id == req.LeaveTypeId);
+            if (lt != null) req.LeaveTypeName = lt.Name;
+        }
+
+        return data;
+    }
+
+    // NEW: Get all users for dropdown in ManageRequests
+    public async Task<List<UserDto>> GetAllUsersAsync()
+    {
+        var c = Client();
+        var data = await c.GetFromJsonAsync<List<UserDto>>("api/users");
+        return data ?? new();
+    }
+
 }
