@@ -1,6 +1,7 @@
 ﻿@page "/request-leave"
 @using LeaveMgmt.Website.Models
 @using LeaveMgmt.Website.Services
+@using LeaveMgmt.Website.Helpers
 @inject LeaveRequestService LeaveRequestsService
 @inject LeaveTypeService LeaveTypesService
 @inject NavigationManager Nav
@@ -76,11 +77,7 @@
     private List<LeaveType> LeaveTypes = new List<LeaveType>();
     private Dictionary<DateTime, List<DateTime>> CalendarMonths = new();
 
-    private List<DateTime> Holidays = new()
-    {
-        new DateTime(DateTime.Today.Year, 1, 1),   // New Year
-        new DateTime(DateTime.Today.Year, 12, 25) // Christmas
-    };
+    
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,18 +117,7 @@
             return;
         }
 
-        int totalDays = 0;
-        for (var day = FromDate; day <= ToDate; day = day.AddDays(1))
-        {
-            if (day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
-                continue;
-            if (Holidays.Any(h => h.Date == day.Date))
-                continue;
-
-            totalDays++;
-        }
-
-        NumberOfDays = totalDays;
+        NumberOfDays = Helpers.CalculateWorkingDays(FromDate, ToDate);
 
         BuildCalendar();
     }

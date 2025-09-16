@@ -8,12 +8,10 @@ namespace LeaveMgmt.Website.Services;
 public sealed class LeaveRequestService
 {
     private readonly IHttpClientFactory _httpFactory;
-    private readonly AuthService _auth;
     private readonly LeaveTypeService _leaveTypes;
-    public LeaveRequestService(IHttpClientFactory httpFactory, AuthService auth, LeaveTypeService leaveTypes)
+    public LeaveRequestService(IHttpClientFactory httpFactory, LeaveTypeService leaveTypes)
     {
         _httpFactory = httpFactory;
-        _auth = auth;
         _leaveTypes = leaveTypes;
     }
 
@@ -66,6 +64,7 @@ public sealed class LeaveRequestService
             if (lt != null)
             {
                 req.LeaveTypeName = lt.Name;
+                req.Days = Helpers.Helpers.CalculateWorkingDays(req.StartDate, req.EndDate);
             }
         }
         return data ?? new();
