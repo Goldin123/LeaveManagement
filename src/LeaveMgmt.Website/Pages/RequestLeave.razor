@@ -1,6 +1,9 @@
 ﻿@page "/request-leave"
 @using LeaveMgmt.Website.Models
-
+@using LeaveMgmt.Website.Services
+@inject LeaveRequestService LeaveRequestsService
+@inject LeaveTypeService LeaveTypesService
+@inject NavigationManager Nav
 <h3>Request Leave</h3>
 
 <div class="row">
@@ -66,7 +69,7 @@
     private DateTime ToDate = DateTime.Today;
     private int NumberOfDays;
     private bool IsSubmitting;
-
+    private List<LeaveType> LeaveTypes = new List<LeaveType>();
     private Dictionary<DateTime, List<DateTime>> CalendarMonths = new();
 
     private List<DateTime> Holidays = new()
@@ -75,17 +78,11 @@
         new DateTime(DateTime.Today.Year, 12, 25) // Christmas
     };
 
-    private List<LeaveType> LeaveTypes = new()
-    {
-        new LeaveType { Id = Guid.Parse("C34DE22D-DBEA-40AC-84C4-F1B5A4F335C3"), Name = "Annual" },
-        new LeaveType { Id = Guid.Parse("822DFD3C-FF3A-458A-85EA-1BA32F5DB32D"), Name = "Sick" },
-        new LeaveType { Id = Guid.Parse("4731EE57-627D-4639-B1DE-10E47DF45DC6"), Name = "Unpaid" }
-    };
-
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         BuildCalendar();
         RecalculateDays();
+        LeaveTypes = await LeaveTypesService.GetAsync();
     }
 
     private void BuildCalendar()
@@ -137,15 +134,35 @@
 
     private async Task Submit()
     {
+        if (NumberOfDays <= 0)
+            return;
+
         IsSubmitting = true;
-        // TODO: call LeaveRequestService.CreateAsync with SelectedLeaveTypeId, FromDate, ToDate
-        await Task.Delay(500);
+
+        var dto = new SubmitLeaveRequest
+        {
+            LeaveTypeId = SelectedLeaveTypeId,
+            StartDate = DateOnly.FromDateTime(FromDate),
+            EndDate = DateOnly.FromDateTime(ToDate),
+            Days = NumberOfDays,
+			Reason = LeaveTypes.FirstOrDefault(lt => lt.Id == SelectedLeaveTypeId)?.Name ?? "N/A"
+        };
+
+        var result = await LeaveRequestsService.SubmitAsync(dto);
+
         IsSubmitting = false;
+
+        if (result.Success)
+        {
+            // redirect back to dashboard
+            Nav.NavigateTo("/dashboard", forceLoad: true);
+        }
+        else
+        {
+            // TODO: show error to user
+            Console.WriteLine("Submit failed: " + result.Error);
+        }
     }
 
-    private class LeaveType
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-    }
+
 }

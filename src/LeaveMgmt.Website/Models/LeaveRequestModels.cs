@@ -4,12 +4,18 @@ namespace LeaveMgmt.Website.Models;
 
 public sealed class SubmitLeaveRequest
 {
+    public Guid EmployeeId { get; set; }
     [Required] public Guid LeaveTypeId { get; set; }
-    [Required] public DateTime StartDate { get; set; }
-    [Required] public DateTime EndDate { get; set; }
+    [Required] public DateOnly StartDate { get; set; }
+    [Required] public DateOnly EndDate { get; set; }
     public int Days { get; set; }
-    public string? Reason { get; set; }
+    public string Reason { get; set; }
 }
+public class SubmitLeaveResponse
+{
+    public Guid Id { get; set; }
+}
+
 
 public sealed class ApproveRequest { [Required] public Guid Id { get; set; } }
 public sealed class RejectRequest { [Required] public Guid Id { get; set; } public string? Reason { get; set; } }
@@ -24,4 +30,10 @@ public sealed class LeaveRequestListItem
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public string Status { get; set; } = "Pending"; // Pending/Approved/Rejected
+}
+
+public sealed class LeaveType
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
 }

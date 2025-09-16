@@ -33,7 +33,7 @@ public sealed class SubmitLeaveRequestHandler(
             // Domain aggregate uses ctor + Submit() 
             var req = new LeaveRequest(employee, ltRes.Value, range, cmd.Reason);
             var submitted = req.Submit();
-            if (!submitted.IsSuccess) return Result<Guid>.Failure(submitted.Error!);
+            if (!submitted.IsSuccess) return Result<Guid>.Failure(submitted.Error!);           
 
             var created = await leaveRequests.CreateAsync(req, ct);
             return created.IsSuccess ? Result<Guid>.Success(req.Id) : Result<Guid>.Failure(created.Error!);

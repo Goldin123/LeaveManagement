@@ -5,6 +5,7 @@ public sealed record SubmitLeaveRequestBody(
     Guid LeaveTypeId,
     DateOnly StartDate,
     DateOnly EndDate,
+    int? Days,
     string Reason);
 
 public sealed record ApproveBody(Guid ManagerId);

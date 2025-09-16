@@ -9,11 +9,12 @@ public sealed class LeaveRequestService
 {
     private readonly IHttpClientFactory _httpFactory;
     private readonly AuthService _auth;
-
-    public LeaveRequestService(IHttpClientFactory httpFactory, AuthService auth)
+    private readonly LeaveTypeService _leaveTypes;
+    public LeaveRequestService(IHttpClientFactory httpFactory, AuthService auth, LeaveTypeService leaveTypes)
     {
         _httpFactory = httpFactory;
         _auth = auth;
+        _leaveTypes = leaveTypes;
     }
 
     private HttpClient Client()
@@ -32,18 +33,41 @@ public sealed class LeaveRequestService
     public async Task<ApiResult<Guid>> SubmitAsync(SubmitLeaveRequest dto)
     {
         var c = Client();
+        var employeeId = TryGetUserIdFromJwt(LoggedUser.Token);
+        if (employeeId == Guid.Empty)
+            return new();
+        dto.EmployeeId = employeeId;
         var resp = await c.PostAsJsonAsync("api/leave-requests", dto);
         if (!resp.IsSuccessStatusCode)
             return ApiResult<Guid>.Fail(await resp.Content.ReadAsStringAsync());
-        var id = await resp.Content.ReadFromJsonAsync<Guid>();
-        return ApiResult<Guid>.Ok(id);
+
+        var result = await resp.Content.ReadFromJsonAsync<SubmitLeaveResponse>();
+        
+        if (result == null)
+            return ApiResult<Guid>.Fail("Empty response");
+
+        return ApiResult<Guid>.Ok(result.Id);
     }
 
     public async Task<List<LeaveRequestListItem>> GetByEmployeeAsync(Guid employeeId)
     {
         var c = Client();
+
         var url = $"api/leave-requests/by-employee/{employeeId}";
         var data = await c.GetFromJsonAsync<List<LeaveRequestListItem>>(url);
+
+        // Get leave types
+        var types = await _leaveTypes.GetAsync();
+
+        // Match LeaveTypeId -> LeaveTypeName
+        foreach (var req in data)
+        {
+            var lt = types.FirstOrDefault(t => t.Id == req.LeaveTypeId);
+            if (lt != null)
+            {
+                req.LeaveTypeName = lt.Name;
+            }
+        }
         return data ?? new();
     }
 
