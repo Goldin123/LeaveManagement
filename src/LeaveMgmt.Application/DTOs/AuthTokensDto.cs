@@ -1,5 +1,4 @@
-﻿// File: src/LeaveMgmt.Application/DTOs/AuthTokensDto.cs
-namespace LeaveMgmt.Application.DTOs;
+﻿namespace LeaveMgmt.Application.DTOs;
 
 public sealed class AuthTokensDto
 {

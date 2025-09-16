@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Infrastructure.UnitTests/Messaging/RedisEventBusTests.cs
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using LeaveMgmt.Infrastructure.Messaging;
 using Moq;
 using StackExchange.Redis;

@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Application/Queries/LeaveRequests/GetByEmployee/GetLeaveRequestsByEmployeeQuery.cs
-using LeaveMgmt.Application.Abstractions;
+﻿using LeaveMgmt.Application.Abstractions;
 using LeaveMgmt.Application.Abstractions.Repositories;
 using LeaveMgmt.Application.DTOs;
 using LeaveMgmt.Domain;

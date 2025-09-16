@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Application/Commands/LeaveRequests/SubmitLeaveRequest/SubmitLeaveRequestCommand.cs
-using LeaveMgmt.Application.Abstractions; // IRequest, IRequestHandler
+﻿using LeaveMgmt.Application.Abstractions; // IRequest, IRequestHandler
 using LeaveMgmt.Application.Abstractions.Repositories;
 using LeaveMgmt.Domain;                    // Result, Result<T>
 using LeaveMgmt.Domain.LeaveRequests;

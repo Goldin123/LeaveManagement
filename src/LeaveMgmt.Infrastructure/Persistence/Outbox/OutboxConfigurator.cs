@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Infrastructure/Persistence/Outbox/OutboxConfigurator.cs
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace LeaveMgmt.Infrastructure.Persistence.Outbox;

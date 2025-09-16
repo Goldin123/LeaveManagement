@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Api/Endpoints/Contracts.cs
-namespace LeaveMgmt.Api.Endpoints;
+﻿namespace LeaveMgmt.Api.Endpoints;
 
 public sealed record SubmitLeaveRequestBody(
     Guid EmployeeId,

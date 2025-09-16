@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Api/Program.cs
-using LeaveMgmt.Api.Configuration;
+﻿using LeaveMgmt.Api.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApi(builder.Configuration);

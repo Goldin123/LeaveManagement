@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Infrastructure/Messaging/RedisEventBus.cs
-using System.Text.Json;
+﻿using System.Text.Json;
 using StackExchange.Redis;
 
 namespace LeaveMgmt.Infrastructure.Messaging;

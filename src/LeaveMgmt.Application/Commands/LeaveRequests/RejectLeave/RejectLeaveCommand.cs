@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Application/Commands/LeaveRequests/RejectLeave/RejectLeaveCommand.cs
-using LeaveMgmt.Application.Abstractions;
+﻿using LeaveMgmt.Application.Abstractions;
 using LeaveMgmt.Application.Abstractions.Repositories;
 using LeaveMgmt.Domain;
 using LeaveMgmt.Domain.ValueObjects;

@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Application/DependencyInjection.cs
-using System.Reflection;
+﻿using System.Reflection;
 using FluentValidation;
 using LeaveMgmt.Application.Abstractions;
 using Microsoft.Extensions.DependencyInjection;

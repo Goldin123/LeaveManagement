@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Application/Abstractions/IPipelineBehavior.cs
-namespace LeaveMgmt.Application.Abstractions;
+﻿namespace LeaveMgmt.Application.Abstractions;
 
 public interface IPipelineBehavior<TRequest, TResponse>
 {

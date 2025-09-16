@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Application/Behaviors/AuthorizationBehavior.cs
-using LeaveMgmt.Application.Abstractions.Identity;
+﻿using LeaveMgmt.Application.Abstractions.Identity;
 using LeaveMgmt.Application.Commands.LeaveRequests.ApproveLeave;
 using LeaveMgmt.Application.Commands.LeaveRequests.RejectLeave;
 using LeaveMgmt.Application.Commands.LeaveRequests.RetractLeave;

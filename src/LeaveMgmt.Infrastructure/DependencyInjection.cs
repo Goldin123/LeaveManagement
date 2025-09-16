@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Infrastructure/DependencyInjection.cs
-using LeaveMgmt.Application.Abstractions.Repositories;
+﻿using LeaveMgmt.Application.Abstractions.Repositories;
 using LeaveMgmt.Application.Abstractions.Security;
 using LeaveMgmt.Infrastructure.Messaging;
 using LeaveMgmt.Infrastructure.Persistence;
