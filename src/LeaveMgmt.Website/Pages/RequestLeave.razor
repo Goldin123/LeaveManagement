@@ -19,16 +19,20 @@
             </select>
         </div>
 
-        <!-- From Date -->
         <div class="mb-3">
             <label class="form-label">Leave From</label>
-            <input type="date" class="form-control" @bind="FromDate" @bind:after="RecalculateDays" />
+            <input type="date" class="form-control"
+                   @bind="FromDate"
+                   @bind:after="RecalculateDays"
+                   min="@DateTime.Today.ToString("yyyy-MM-dd")" />
         </div>
 
-        <!-- To Date -->
         <div class="mb-3">
             <label class="form-label">Leave To</label>
-            <input type="date" class="form-control" @bind="ToDate" @bind:after="RecalculateDays" />
+            <input type="date" class="form-control"
+                   @bind="ToDate"
+                   @bind:after="RecalculateDays"
+                   min="@FromDate.ToString("yyyy-MM-dd")" />
         </div>
 
         <!-- Number of Days -->
