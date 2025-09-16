@@ -36,7 +36,6 @@ public class RegisterUserHandlerTests
         res.Error.Should().Contain("not authorized");
     }
 
-    [Fact] // Unit
     public async Task Register_Should_Create_User_And_Return_JWT()
     {
         var users = new Mock<IUserRepository>();
@@ -52,9 +51,16 @@ public class RegisterUserHandlerTests
         users.Setup(u => u.GetByEmailAsync("dev@acme.com", It.IsAny<CancellationToken>()))
              .ReturnsAsync(Result<User?>.Success(null));
 
-        // Hash + token
+        // Hash
         hasher.Setup(h => h.Hash("pw")).Returns(("hash", "salt"));
-        jwt.Setup(j => j.CreateToken(It.IsAny<Guid>(), "dev@acme.com","name", roles, null))
+
+        // JWT
+        jwt.Setup(j => j.CreateToken(
+                It.IsAny<Guid>(),
+                "dev@acme.com",
+                "Dev User",
+                roles,
+                It.IsAny<TimeSpan?>()))   // 👈 FIX here
            .Returns("jwt-token");
 
         // Create success
