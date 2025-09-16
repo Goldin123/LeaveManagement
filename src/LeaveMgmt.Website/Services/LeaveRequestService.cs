@@ -104,23 +104,53 @@ public sealed class LeaveRequestService
 
 
 
-    public async Task<ApiResult<bool>> RejectAsync(RejectRequest dto)
+public async Task<ApiResult<bool>> RejectAsync(RejectRequest dto)
+{
+    var c = Client();
+
+    var url = $"api/leave-requests/{dto.Id}/reject";
+
+    var managerId = Helpers.Helpers.TryGetUserIdFromJwt(LoggedUser.Token);
+    if (managerId == Guid.Empty)
+        return ApiResult<bool>.Fail("Invalid manager identity.");
+
+    // FIX: use correct property casing (matches RejectBody record)
+    dto.Reason ??= "No reason provided";
+
+        var payload = new 
+    { 
+        ManagerId = managerId, 
+        Reason = dto.Reason 
+    };
+
+    var resp = await c.PostAsJsonAsync(url, payload);
+
+    return resp.IsSuccessStatusCode
+        ? ApiResult<bool>.Ok(true)
+        : ApiResult<bool>.Fail(await resp.Content.ReadAsStringAsync());
+}
+
+
+    public async Task<ApiResult<bool>> RetractAsync(RetractRequest dto)
     {
         var c = Client();
-        var resp = await c.PostAsJsonAsync("api/leave-requests/reject", dto);
+
+        // must include Id in the route
+        var url = $"api/leave-requests/{dto.Id}/retract";
+
+        var employeeId = Helpers.Helpers.TryGetUserIdFromJwt(LoggedUser.Token);
+        if (employeeId == Guid.Empty)
+            return ApiResult<bool>.Fail("Invalid employee identity.");
+
+        var payload = new { employeeId };
+
+        var resp = await c.PostAsJsonAsync(url, payload);
+
         return resp.IsSuccessStatusCode
             ? ApiResult<bool>.Ok(true)
             : ApiResult<bool>.Fail(await resp.Content.ReadAsStringAsync());
     }
 
-    public async Task<ApiResult<bool>> RetractAsync(RetractRequest dto)
-    {
-        var c = Client();
-        var resp = await c.PostAsJsonAsync("api/leave-requests/retract", dto);
-        return resp.IsSuccessStatusCode
-            ? ApiResult<bool>.Ok(true)
-            : ApiResult<bool>.Fail(await resp.Content.ReadAsStringAsync());
-    }
 
     public async Task<List<LeaveRequestListItem>> GetAllAsync()
     {

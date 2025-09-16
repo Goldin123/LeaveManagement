@@ -80,11 +80,15 @@
     {
         var res = new ApproveRequest { Id = id};
         var result = await LeaveRequests.ApproveAsync(res);
+        if (result.Success)
+            await LoadRequests();
     }
 
     private async Task Reject(Guid id)
     {
 		var res = new RejectRequest { Id = id };
         var result = await LeaveRequests.RejectAsync(res);
+        if (result.Success)
+            await LoadRequests();
     }
 }

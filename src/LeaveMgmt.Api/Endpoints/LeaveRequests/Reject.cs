@@ -2,12 +2,10 @@
 using LeaveMgmt.Application.Abstractions;
 using LeaveMgmt.Application.Commands.LeaveRequests.RejectLeave;
 using LeaveMgmt.Domain;
-using Microsoft.AspNetCore.Http;
 
 namespace LeaveMgmt.Api.Endpoints.LeaveRequests;
 
-public sealed class RejectEndpoint(IMediator mediator)
-    : Endpoint<(LeaveMgmt.Api.Endpoints.IdRoute Route, LeaveMgmt.Api.Endpoints.RejectBody Body)>
+public sealed class RejectEndpoint(IMediator mediator) : EndpointWithoutRequest
 {
     public override void Configure()
     {
@@ -16,15 +14,33 @@ public sealed class RejectEndpoint(IMediator mediator)
         Summary(s => s.Summary = "Reject a leave request");
     }
 
-    public override async Task HandleAsync((LeaveMgmt.Api.Endpoints.IdRoute Route, LeaveMgmt.Api.Endpoints.RejectBody Body) req, CancellationToken ct)
+    public override async Task HandleAsync(CancellationToken ct)
     {
-        var result = await mediator.Send<Result>(new RejectLeaveCommand(req.Route.Id, req.Body.ManagerId, req.Body.Reason), ct);
+        var id = Route<Guid>("Id"); // route binding
+        var body = await HttpContext.Request.ReadFromJsonAsync<RejectBody>(ct);
 
-        HttpContext.Response.StatusCode = result.IsSuccess
-            ? StatusCodes.Status204NoContent
-            : StatusCodes.Status400BadRequest;
+        if (body is null)
+        {
+            HttpContext.Response.StatusCode = 400;
+            await HttpContext.Response.WriteAsJsonAsync(new RejectResponse(false, "Missing body"), ct);
+            return;
+        }
 
-        if (!result.IsSuccess)
-            await HttpContext.Response.WriteAsJsonAsync(new { error = result.Error }, ct);
+        var cmd = new RejectLeaveCommand(id, body.ManagerId, body.Reason);
+        var result = await mediator.Send<Result>(cmd, ct);
+
+        if (result.IsSuccess)
+        {
+            HttpContext.Response.StatusCode = 200;
+            await HttpContext.Response.WriteAsJsonAsync(new RejectResponse(true, null), ct);
+        }
+        else
+        {
+            HttpContext.Response.StatusCode = 400;
+            await HttpContext.Response.WriteAsJsonAsync(new RejectResponse(false, result.Error), ct);
+        }
     }
 }
+
+public record RejectBody(Guid ManagerId, string Reason);
+public record RejectResponse(bool Success, string? Error);
