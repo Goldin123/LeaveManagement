@@ -24,10 +24,10 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Employee</th>
                 <th>Start Date</th>
                 <th>End Date</th>
                 <th>Type</th>
+                <th>Days</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -36,10 +36,10 @@
             @foreach (var req in Requests)
             {
                 <tr>
-                    <td>@req.EmployeeName</td>
                     <td>@req.StartDate.ToString("yyyy/MM/dd")</td>
                     <td>@req.EndDate.ToString("yyyy/MM/dd")</td>
                     <td>@req.LeaveTypeName</td>
+                    <td>@req.Days</td>
                     <td>@req.Status</td>
                     <td>
                         @if (req.Status == "Submitted")
