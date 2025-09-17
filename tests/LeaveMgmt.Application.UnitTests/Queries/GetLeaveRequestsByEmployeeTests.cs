@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Microsoft.Extensions.Logging;
 
 using LeaveMgmt.Application.DTOs;
 using LeaveMgmt.Application.Queries.LeaveRequests.GetByEmployee;
@@ -20,6 +21,7 @@ public sealed class GetLeaveRequestsByEmployeeTests
     public async Task Should_Return_Only_Target_Employee()
     {
         var repo = new Mock<LeaveRequestRepo>();
+        var logger = new Mock<ILogger<GetLeaveRequestsByEmployeeHandler>>();
 
         var lt = new LeaveType("Annual", 30);
         var e1 = new EmployeeId(Guid.NewGuid());
@@ -38,7 +40,7 @@ public sealed class GetLeaveRequestsByEmployeeTests
         repo.Setup(r => r.GetByEmployeeAsync(e1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<IReadOnlyList<LeaveRequest>>.Success(new List<LeaveRequest> { r1, r2 }));
 
-        var handler = new GetLeaveRequestsByEmployeeHandler(repo.Object);
+        var handler = new GetLeaveRequestsByEmployeeHandler(repo.Object, logger.Object);
 
         var res = await handler.Handle(new GetLeaveRequestsByEmployeeQuery(e1.Value), CancellationToken.None);
 
@@ -51,12 +53,13 @@ public sealed class GetLeaveRequestsByEmployeeTests
     public async Task Should_Propagate_Failure_From_Repository()
     {
         var repo = new Mock<LeaveRequestRepo>();
+        var logger = new Mock<ILogger<GetLeaveRequestsByEmployeeHandler>>();
         var e1 = new EmployeeId(Guid.NewGuid());
 
         repo.Setup(r => r.GetByEmployeeAsync(e1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<IReadOnlyList<LeaveRequest>>.Failure("boom"));
 
-        var handler = new GetLeaveRequestsByEmployeeHandler(repo.Object);
+        var handler = new GetLeaveRequestsByEmployeeHandler(repo.Object, logger.Object);
 
         var res = await handler.Handle(new GetLeaveRequestsByEmployeeQuery(e1.Value), CancellationToken.None);
 

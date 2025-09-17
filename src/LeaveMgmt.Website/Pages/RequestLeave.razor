@@ -2,9 +2,10 @@
 @using LeaveMgmt.Website.Models
 @using LeaveMgmt.Website.Services
 @using LeaveMgmt.Website.Helpers
-@inject LeaveRequestService LeaveRequestsService
-@inject LeaveTypeService LeaveTypesService
+@inject ILeaveRequestService LeaveRequestsService
+@inject ILeaveTypeService LeaveTypesService
 @inject NavigationManager Nav
+@inject IHolidayService HolidayService
 <h3>Request Leave</h3>
 
 <div class="row">
@@ -53,15 +54,41 @@
             {
                 <div class="calendar-month mb-3">
                     <h6>@month.Key.ToString("MMMM yyyy")</h6>
+
+                    <!-- Weekday headers -->
+                    <div class="calendar-grid weekday-headers">
+                        <div class="calendar-header">Mon</div>
+                        <div class="calendar-header">Tue</div>
+                        <div class="calendar-header">Wed</div>
+                        <div class="calendar-header">Thu</div>
+                        <div class="calendar-header">Fri</div>
+                        <div class="calendar-header weekend">Sat</div>
+                        <div class="calendar-header weekend">Sun</div>
+                    </div>
+
                     <div class="calendar-grid">
                         @foreach (var day in month.Value)
                         {
-                            var inRange = day >= FromDate && day <= ToDate;
-                            <div class="calendar-cell @(inRange ? "bg-primary text-white" : "bg-light")">
-                                @day.Day
-                            </div>
+                            if (day == DateTime.MinValue)
+                            {
+                                <div class="calendar-cell empty"></div>
+                            }
+                            else
+                            {
+                                var inRange = day >= FromDate && day <= ToDate;
+                                var isHoliday = Holidays.Any(h => h.Date.Date == day.Date);
+                                var isWeekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+
+                                var css = inRange
+                                ? "bg-primary text-white"
+                                : (isWeekend || isHoliday) ? "holiday-day"
+                                : "bg-light";
+
+                                <div class="calendar-cell @css">@day.Day</div>
+                            }
                         }
                     </div>
+
                 </div>
             }
         </div>
@@ -76,14 +103,15 @@
     private bool IsSubmitting;
     private List<LeaveType> LeaveTypes = new List<LeaveType>();
     private Dictionary<DateTime, List<DateTime>> CalendarMonths = new();
+    private List<Holiday> Holidays = new();
 
-    
 
     protected override async Task OnInitializedAsync()
     {
         BuildCalendar();
         RecalculateDays();
         LeaveTypes = await LeaveTypesService.GetAsync();
+        Holidays = await HolidayService.GetAsync(DateTime.Today.Year);
     }
 
     private void BuildCalendar()
@@ -98,17 +126,27 @@
         while (current <= ToDate)
         {
             var daysInMonth = DateTime.DaysInMonth(current.Year, current.Month);
-            var days = Enumerable.Range(1, daysInMonth)
-                                 .Select(d => new DateTime(current.Year, current.Month, d))
-                                 .ToList();
+            var firstDay = new DateTime(current.Year, current.Month, 1);
+
+            var days = new List<DateTime>();
+
+            // Pad empty slots so the 1st lines up correctly
+            int offset = ((int)firstDay.DayOfWeek + 6) % 7;
+            // Shift: makes Monday = 0, Sunday = 6
+            for (int i = 0; i < offset; i++)
+                days.Add(DateTime.MinValue); // placeholder
+
+            // Add actual days
+            for (int d = 1; d <= daysInMonth; d++)
+                days.Add(new DateTime(current.Year, current.Month, d));
 
             CalendarMonths[current] = days;
-
             current = current.AddMonths(1);
         }
     }
 
-    private void RecalculateDays()
+
+    private async Task RecalculateDays()
     {
         if (ToDate < FromDate)
         {
@@ -117,7 +155,7 @@
             return;
         }
 
-        NumberOfDays = Helpers.CalculateWorkingDays(FromDate, ToDate);
+        NumberOfDays = await Helpers.CalculateWorkingDaysAsync(FromDate, ToDate, HolidayService);
 
         BuildCalendar();
     }

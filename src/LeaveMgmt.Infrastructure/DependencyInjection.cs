@@ -1,17 +1,17 @@
-﻿using LeaveMgmt.Application.Abstractions.Repositories;
+﻿// NEW:
+using LeaveMgmt.Application.Abstractions.Identity;
+using LeaveMgmt.Application.Abstractions.Repositories;
 using LeaveMgmt.Application.Abstractions.Security;
+using LeaveMgmt.Infrastructure.Identity;
 using LeaveMgmt.Infrastructure.Messaging;
 using LeaveMgmt.Infrastructure.Persistence;
 using LeaveMgmt.Infrastructure.Repositories;
 using LeaveMgmt.Infrastructure.Security;
+using LeaveMgmt.Infrastructure.Seeder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
-
-// NEW:
-using LeaveMgmt.Application.Abstractions.Identity;
-using LeaveMgmt.Infrastructure.Identity;
 
 namespace LeaveMgmt.Infrastructure;
 
@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<ILeaveRequestRepository, LeaveRequestRepository>();
         services.AddScoped<ILeaveTypeRepository, LeaveTypeRepository>();
         services.AddScoped<IUserRepository, UserRepository>(); // ✅ you already had this
+        services.AddScoped<IHolidayRepository, HolidayRepository>();
 
         // ---- Security (hashing + JWT) ----
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
@@ -49,6 +50,7 @@ public static class DependencyInjection
 
         // ---- (Optional) Seed roster users on startup (enable with "Seed:Users": true) ----
         services.AddHostedService<UserRosterSeeder>();               // ✅ add this if you want auto-seed
+        services.AddHostedService<LeaveTypeSeeder>();
 
         return services;
     }

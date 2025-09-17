@@ -1,115 +1,169 @@
-﻿﻿using LeaveMgmt.Website.Models;
+﻿using LeaveMgmt.Website.Models;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.Extensions.Logging;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-namespace LeaveMgmt.Website.Services
+namespace LeaveMgmt.Website.Services;
+
+/// <summary>
+/// Handles authentication logic in the Blazor website,
+/// including login, registration, session restore, and logout.
+/// Uses IHttpClientFactory to call the API and ProtectedLocalStorage for persistence.
+/// </summary>
+public sealed class AuthService : IAuthService
 {
-    public class AuthService
+    private readonly IHttpClientFactory _httpFactory;
+    private readonly ProtectedLocalStorage _storage;
+    private readonly ILogger<AuthService> _logger;
+
+    public AuthService(
+        IHttpClientFactory httpFactory,
+        ProtectedLocalStorage storage,
+        ILogger<AuthService> logger)
     {
-        private readonly IHttpClientFactory _httpFactory;
-        private readonly ProtectedLocalStorage _storage;
+        _httpFactory = httpFactory;
+        _storage = storage;
+        _logger = logger;
+    }
 
-        public AuthService(IHttpClientFactory httpFactory, ProtectedLocalStorage storage)
+    public UserInfo? CurrentUser { get; private set; }
+    public string? Token { get; private set; }
+
+    public string? GetToken() => Token;
+
+    /// <inheritdoc />
+    public async Task<ApiResult<LoginResponse>> LoginAsync(LoginBody body)
+    {
+        _logger.LogInformation("Login attempt for {Email}", body.Email);
+
+        var http = _httpFactory.CreateClient("api");
+        var resp = await http.PostAsJsonAsync("api/auth/login", body);
+
+        if (!resp.IsSuccessStatusCode)
         {
-            _httpFactory = httpFactory;
-            _storage = storage;
+            var err = await resp.Content.ReadAsStringAsync();
+            _logger.LogWarning("Login failed for {Email}: {Error}", body.Email, err);
+            return ApiResult<LoginResponse>.Fail(err);
         }
 
-        public UserInfo? CurrentUser { get; private set; }
-        public string? Token { get; private set; }
-
-        public string? GetToken() => Token;
-
-
-        public async Task<ApiResult<LoginResponse>> LoginAsync(LoginBody body)
+        var dto = await resp.Content.ReadFromJsonAsync<LoginResponse>();
+        if (dto is null || string.IsNullOrWhiteSpace(dto.Token))
         {
-            var http = _httpFactory.CreateClient("api");
-            var resp = await http.PostAsJsonAsync("api/auth/login", body);
-            if (!resp.IsSuccessStatusCode)
-                return ApiResult<LoginResponse>.Fail(await resp.Content.ReadAsStringAsync());
-
-            var dto = await resp.Content.ReadFromJsonAsync<LoginResponse>();
-            if (dto is null || string.IsNullOrWhiteSpace(dto.Token))
-                return ApiResult<LoginResponse>.Fail("Invalid login response.");
-
-            Token = dto.Token;
-            LoggedUser.Token = Token;
-            try
-            {
-                await _storage.SetAsync("jwt", Token);
-            }
-            catch (InvalidOperationException) { }
-
-            var role = TryGetUserRoleFromJwt(Token);
-            var name = new JwtSecurityTokenHandler()
-                .ReadJwtToken(Token)
-                .Claims
-                .FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
-                ?? "Me";
-
-            CurrentUser = new UserInfo { UserName = name, Role = role ?? "Employee" };
-            return ApiResult<LoginResponse>.Ok(dto);
+            _logger.LogWarning("Invalid login response for {Email}", body.Email);
+            return ApiResult<LoginResponse>.Fail("Invalid login response.");
         }
 
-        public async Task<ApiResult<bool>> RegisterAsync(RegisterBody body)
+        Token = dto.Token;
+        LoggedUser.Token = Token;
+
+        try
         {
-            var http = _httpFactory.CreateClient("api");
-            var resp = await http.PostAsJsonAsync("api/auth/register", body);
-            return resp.IsSuccessStatusCode
-                ? ApiResult<bool>.Ok(true)
-                : ApiResult<bool>.Fail(await resp.Content.ReadAsStringAsync());
+            await _storage.SetAsync("jwt", Token);
+            _logger.LogInformation("Stored JWT for {Email}", body.Email);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Failed to persist JWT for {Email}", body.Email);
         }
 
-        public async Task InitializeAsync()
-        {
-            try
-            {
-                var jwt = await _storage.GetAsync<string>("jwt");
-                if (jwt.Success && !string.IsNullOrWhiteSpace(jwt.Value))
-                {
-                    Token = jwt.Value;
-                    var role = TryGetUserRoleFromJwt(Token);
-                    var name = new JwtSecurityTokenHandler()
-                        .ReadJwtToken(Token)
-                        .Claims
-                        .FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
-                        ?? "Me";
+        var role = TryGetUserRoleFromJwt(Token);
+        var name = new JwtSecurityTokenHandler()
+            .ReadJwtToken(Token)
+            .Claims
+            .FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
+            ?? "Me";
 
-                    CurrentUser ??= new UserInfo { UserName = name, Role = role ?? "Employee" };
-                }
-            }
-            catch (InvalidOperationException) { }
+        CurrentUser = new UserInfo { UserName = name, Role = role ?? "Employee" };
+        _logger.LogInformation("Login successful for {Email}, role {Role}", body.Email, CurrentUser.Role);
+
+        return ApiResult<LoginResponse>.Ok(dto);
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<bool>> RegisterAsync(RegisterBody body)
+    {
+        _logger.LogInformation("Registration attempt for {Email}", body.Email);
+
+        var http = _httpFactory.CreateClient("api");
+        var resp = await http.PostAsJsonAsync("api/auth/register", body);
+
+        if (resp.IsSuccessStatusCode)
+        {
+            _logger.LogInformation("Registration successful for {Email}", body.Email);
+            return ApiResult<bool>.Ok(true);
         }
-
-        public async Task LogoutAsync()
+        else
         {
-            Token = null;
-            CurrentUser = null;
-
-            try
-            {
-                await _storage.DeleteAsync("jwt");
-            }
-            catch (InvalidOperationException) { }
+            var err = await resp.Content.ReadAsStringAsync();
+            _logger.LogWarning("Registration failed for {Email}: {Error}", body.Email, err);
+            return ApiResult<bool>.Fail(err);
         }
+    }
 
-        private static string? TryGetUserRoleFromJwt(string? jwt)
+    /// <inheritdoc />
+    public async Task InitializeAsync()
+    {
+        try
         {
-            if (string.IsNullOrWhiteSpace(jwt))
-                return null;
-
-            try
+            var jwt = await _storage.GetAsync<string>("jwt");
+            if (jwt.Success && !string.IsNullOrWhiteSpace(jwt.Value))
             {
-                var token = new JwtSecurityTokenHandler().ReadJwtToken(jwt);
+                Token = jwt.Value;
+                var role = TryGetUserRoleFromJwt(Token);
+                var name = new JwtSecurityTokenHandler()
+                    .ReadJwtToken(Token)
+                    .Claims
+                    .FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
+                    ?? "Me";
 
-                return token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value
-                    ?? token.Claims.FirstOrDefault(c => c.Type == "role")?.Value;
+                CurrentUser ??= new UserInfo { UserName = name, Role = role ?? "Employee" };
+
+                _logger.LogInformation("Restored session for {User}", name);
             }
-            catch
-            {
-                return null;
-            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Failed to restore session from storage");
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task LogoutAsync()
+    {
+        var user = CurrentUser?.UserName ?? "Unknown";
+        Token = null;
+        CurrentUser = null;
+
+        try
+        {
+            await _storage.DeleteAsync("jwt");
+            _logger.LogInformation("User {User} logged out", user);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Failed to clear session for {User}", user);
+        }
+    }
+
+    /// <summary>
+    /// Extracts the role claim from a JWT token if available.
+    /// </summary>
+    private static string? TryGetUserRoleFromJwt(string? jwt)
+    {
+        if (string.IsNullOrWhiteSpace(jwt))
+            return null;
+
+        try
+        {
+            var token = new JwtSecurityTokenHandler().ReadJwtToken(jwt);
+
+            return token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value
+                ?? token.Claims.FirstOrDefault(c => c.Type == "role")?.Value;
+        }
+        catch
+        {
+            return null;
         }
     }
 }

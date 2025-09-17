@@ -3,6 +3,7 @@ using LeaveMgmt.Infrastructure.Persistence;
 using LeaveMgmt.Infrastructure.Repositories;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace LeaveMgmt.Infrastructure.IntegrationTests.TestInfrastructure;
@@ -29,8 +30,9 @@ public sealed class SqliteInMemoryFixture : IAsyncLifetime
         DbContext = new LeaveMgmtDbContext(options);
         await DbContext.Database.EnsureCreatedAsync();
 
-        LeaveRequestRepository = new LeaveRequestRepository(DbContext);
-        LeaveTypeRepository = new LeaveTypeRepository(DbContext);
+        // Supply NullLogger<T>.Instance to satisfy constructor requirements
+        LeaveRequestRepository = new LeaveRequestRepository(DbContext, NullLogger<LeaveRequestRepository>.Instance);
+        LeaveTypeRepository = new LeaveTypeRepository(DbContext, NullLogger<LeaveTypeRepository>.Instance);
     }
 
     public async ValueTask DisposeAsync()

@@ -1,0 +1,14 @@
+[
+  {
+    "Name": "Unpaid",
+    "MaxDaysPerRequest": 10
+  },
+  {
+    "Name": "Sick",
+    "MaxDaysPerRequest": 15
+  },
+  {
+    "Name": "Annual",
+    "MaxDaysPerRequest": 20
+  }
+]
