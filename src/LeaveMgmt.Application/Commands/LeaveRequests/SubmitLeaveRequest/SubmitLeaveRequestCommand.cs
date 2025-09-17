@@ -4,6 +4,7 @@ using LeaveMgmt.Domain;                    // Result, Result<T>
 using LeaveMgmt.Domain.LeaveRequests;
 using LeaveMgmt.Domain.LeaveTypes;
 using LeaveMgmt.Domain.ValueObjects;
+using LeaveMgmt.Domain.Services;           // LeavePolicy
 using Microsoft.Extensions.Logging;
 
 namespace LeaveMgmt.Application.Commands.LeaveRequests.SubmitLeaveRequest;
@@ -20,7 +21,7 @@ public sealed record SubmitLeaveRequestCommand(
 
 /// <summary>
 /// Handles submission of leave requests. Performs validation on leave type,
-/// constructs the aggregate, calls domain Submit, and persists the result.
+/// applies policy, constructs the aggregate, calls domain Submit, and persists.
 /// Logs each important step.
 /// </summary>
 public sealed class SubmitLeaveRequestHandler(
@@ -51,8 +52,27 @@ public sealed class SubmitLeaveRequestHandler(
             // 2) Construct domain aggregate (LeaveRequest)
             var employee = new EmployeeId(cmd.EmployeeId);
             var range = new DateRange(cmd.StartDate, cmd.EndDate);
-
             var req = new LeaveRequest(employee, ltRes.Value, range, cmd.Reason);
+
+            // 2b) Apply leave policy (e.g., overlap checks)
+            var existingRes = await leaveRequests.GetByEmployeeAsync(employee, ct);
+            if (!existingRes.IsSuccess)
+            {
+                logger.LogWarning(
+                    "Failed to fetch existing leave requests for employee {EmployeeId}: {Error}",
+                    cmd.EmployeeId, existingRes.Error);
+                return Result<Guid>.Failure(existingRes.Error ?? "Could not check existing requests.");
+            }
+
+            var existingRanges = existingRes.Value!
+                .Where(r => r.Status == LeaveStatus.Approved)
+                .Select(r => r.Range);
+
+            if (!LeavePolicy.CanSubmit(req, ltRes.Value, existingRanges))
+            {
+                logger.LogWarning("Leave request policy failed for employee {EmployeeId}", cmd.EmployeeId);
+                return Result<Guid>.Failure("Leave request violates company leave policy.");
+            }
 
             // 3) Call domain Submit() method
             var submitted = req.Submit();
