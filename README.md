@@ -199,4 +199,4 @@ See the [LICENSE.txt](LICENSE.txt) file for details.
 ## 👤 Author
 
 **Goldin Baloyi**   
-🚀 Focused on logistics, traceability, and modern enterprise applications.
+🚀 Focused on modern enterprise applicationss.
