@@ -28,9 +28,9 @@ public sealed class TxtTeamRoster(IConfiguration cfg) : ITeamRoster
         var root = AppContext.BaseDirectory; // bin\[Debug|Release]\net9.0\
         string DefaultPath(string file) => Path.Combine(root, "Seeds", file);
 
-        LoadFile(cfg["Teams:Dev"] ?? DefaultPath("Dev.txt"), "Employee");
-        LoadFile(cfg["Teams:Management"] ?? DefaultPath("Managment.txt"), "Manager");
-        LoadFile(cfg["Teams:Support"] ?? DefaultPath("Support.txt"), "Support");
+        LoadFile(DefaultPath("Dev.txt"), "Employee");
+        LoadFile(DefaultPath("Managment.txt"), "Manager");
+        LoadFile(DefaultPath("Support.txt"), "Support");
 
         _loaded = true;
     }

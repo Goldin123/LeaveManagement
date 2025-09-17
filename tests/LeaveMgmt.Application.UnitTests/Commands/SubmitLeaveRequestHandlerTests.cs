@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -27,6 +28,9 @@ public sealed class SubmitLeaveRequestHandlerTests
 
         var leaveRequests = new Mock<LeaveRequestRepo>();
         LeaveRequest? saved = null;
+
+        leaveRequests.Setup(x => x.GetByEmployeeAsync(It.IsAny<EmployeeId>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(Result<IReadOnlyList<LeaveRequest>>.Success(new List<LeaveRequest>()));
 
         leaveRequests.Setup(x => x.CreateAsync(It.IsAny<LeaveRequest>(), It.IsAny<CancellationToken>()))
                      .Callback<LeaveRequest, CancellationToken>((r, _) => saved = r)
@@ -85,5 +89,51 @@ public sealed class SubmitLeaveRequestHandlerTests
         // Assert
         res.IsSuccess.Should().BeFalse();
         res.Error.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact] // Unit
+    public async Task Handle_Should_Fail_When_Policy_Blocks_Overlapping_Request()
+    {
+        // Arrange
+        var employeeId = Guid.NewGuid();
+        var lt = new LeaveType("Annual", 30);
+
+        // Existing approved request
+        var existing = new LeaveRequest(new EmployeeId(employeeId), lt,
+            new DateRange(DateOnly.FromDateTime(DateTime.Today),
+                          DateOnly.FromDateTime(DateTime.Today.AddDays(2))),
+            "Existing leave");
+        existing.Submit();
+        existing.Approve(new ManagerId(Guid.NewGuid()));
+
+        var leaveTypes = new Mock<LeaveTypeRepo>();
+        leaveTypes.Setup(x => x.GetByIdAsync(lt.Id, It.IsAny<CancellationToken>()))
+                  .ReturnsAsync(Result<LeaveType>.Success(lt));
+
+        var leaveRequests = new Mock<LeaveRequestRepo>();
+        leaveRequests.Setup(x => x.GetByEmployeeAsync(new EmployeeId(employeeId), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(Result<IReadOnlyList<LeaveRequest>>.Success(new List<LeaveRequest> { existing }));
+
+        var logger = new Mock<ILogger<SubmitLeaveRequestHandler>>();
+
+        var handler = new SubmitLeaveRequestHandler(
+            leaveRequests.Object,
+            leaveTypes.Object,
+            logger.Object);
+
+        // New overlapping request
+        var cmd = new SubmitLeaveRequestCommand(
+            employeeId,
+            lt.Id,
+            DateOnly.FromDateTime(DateTime.Today.AddDays(1)), // overlaps
+            DateOnly.FromDateTime(DateTime.Today.AddDays(3)),
+            "Vacation");
+
+        // Act
+        var res = await handler.Handle(cmd, CancellationToken.None);
+
+        // Assert
+        res.IsSuccess.Should().BeFalse();
+        res.Error.Should().Be("Leave request violates company leave policy.");
     }
 }
