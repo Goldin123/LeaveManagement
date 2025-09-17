@@ -20,9 +20,16 @@ It provides employees with an easy way to request leave, managers with tools to 
   - Access to all requests and user management endpoints.
 - **Calendar Integration**
   - Leave days visually highlighted.
-- **Validation**
+- **Validation & Policy**
   - Prevents invalid date ranges (e.g., `To Date` earlier than `From Date`).
   - Enforces leave type rules (e.g., max days per request).
+  - **LeavePolicy** prevents overlaps with already approved leave ranges.
+- **Seeding**
+  - Initial **Leave Types**, **Users**, and **Roles** automatically seeded from JSON/TXT files in `Seeds/`.
+- **Logging**
+  - Centralized logging using **Serilog** with rolling file logs.
+- **Messaging**
+  - Event-driven outbox dispatcher with **Redis Pub/Sub** integration.
 
 ---
 
@@ -33,6 +40,9 @@ It provides employees with an easy way to request leave, managers with tools to 
   - [Entity Framework Core](https://learn.microsoft.com/en-us/ef/) with SQL Server
   - Custom Mediator for CQRS pattern
   - Domain-Driven Design (DDD) principles
+  - **LeavePolicy** domain service for business rules
+  - **Serilog** for structured logging
+  - **Redis Pub/Sub** via `StackExchange.Redis`
 
 - **Frontend**
   - [Blazor Server](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor)
@@ -44,6 +54,7 @@ It provides employees with an easy way to request leave, managers with tools to 
 - **Database**
   - Microsoft SQL Server
   - Migrations via EF Core
+  - Automatic seeding (`LeaveTypeSeeder`, `UserRosterSeeder`, `IdentitySeeder`)
 
 ---
 
@@ -52,12 +63,20 @@ It provides employees with an easy way to request leave, managers with tools to 
 ```
 LeaveMgmt.sln
 │
-├── LeaveMgmt.Api              # ASP.NET Core Web API (endpoints, auth, CQRS)
-├── LeaveMgmt.Application      # Application layer (commands, queries, DTOs)
-├── LeaveMgmt.Domain           # Domain models and business rules
-├── LeaveMgmt.Infrastructure   # EF Core persistence, repositories
-├── LeaveMgmt.Website          # Blazor Server frontend
-└── tests                      # Unit, Integration, and Functional tests
+├── src
+│   ├── LeaveMgmt.Api              # ASP.NET Core Web API (endpoints, auth, CQRS, Serilog, Redis)
+│   ├── LeaveMgmt.Application      # Application layer (commands, queries, DTOs, mediator)
+│   ├── LeaveMgmt.Domain           # Domain models, business rules, LeavePolicy
+│   ├── LeaveMgmt.Infrastructure   # EF Core persistence, repositories, seeders, event bus
+│   └── LeaveMgmt.Website          # Blazor Server frontend
+│
+└── tests
+    ├── LeaveMgmt.Api.FunctionalTests         # API functional tests (endpoints)
+    ├── LeaveMgmt.Application.UnitTests       # Application-layer tests
+    ├── LeaveMgmt.Domain.UnitTests            # Domain entity & LeavePolicy tests
+    ├── LeaveMgmt.Infrastructure.UnitTests    # Repository tests
+    ├── LeaveMgmt.Infrastructure.FunctionalTests
+    └── LeaveMgmt.Infrastructure.IntegrationTests
 ```
 
 ---
@@ -95,7 +114,43 @@ cd LeaveManagement
 dotnet ef database update --project LeaveMgmt.Infrastructure --startup-project LeaveMgmt.Api
 ```
 
-### 3. Run the Solution
+### 3. Enable Seeding (optional)
+
+In `appsettings.json`, toggle seeding options:
+
+```json
+"Seed": {
+  "LeaveTypes": true,
+  "Users": true,
+  "DefaultPassword": "ChangeMe123!"
+},
+"Teams": {
+  "Dev": "Seeds/Dev Team.txt",
+  "Management": "Seeds/Managment Team.txt",
+  "Support": "Seeds/Support Team.txt"
+}
+```
+
+Seeders included:
+- `LeaveTypeSeeder` → seeds default leave types from `Seeds/LeaveTypes.json`
+- `IdentitySeeder` → seeds Employee/Manager roles
+- `UserRosterSeeder` → seeds users from team roster TXT files (`Dev`, `Management`, `Support`)
+
+### 4. Configure Redis (for Event Bus)
+
+Add Redis connection string in `appsettings.json`:
+
+```json
+"ConnectionStrings": {
+  "Redis": "localhost:6379"
+}
+```
+
+This enables:
+- **RedisEventBus** for publishing domain events
+- **OutboxDispatcher** background service to flush events from DB to Redis
+
+### 5. Run the Solution
 
 ```bash
 dotnet build
@@ -105,6 +160,7 @@ dotnet run --project LeaveMgmt.Website
 
 - API Swagger available at: `https://localhost:7186/swagger`
 - Blazor UI available at: `https://localhost:7089`
+- Logs written to `Logs/log-*.txt`
 
 ---
 
@@ -112,9 +168,9 @@ dotnet run --project LeaveMgmt.Website
 
 Tests are organized into:
 
-- **Unit Tests** → Core domain logic
-- **Functional Tests** → CQRS commands/queries
-- **Integration Tests** → API & persistence
+- **Unit Tests** → Core domain logic (e.g., LeaveRequest, LeavePolicy)
+- **Functional Tests** → CQRS commands/queries and API endpoints
+- **Integration Tests** → Persistence and external systems (DB, Redis)
 
 Run all tests:
 
@@ -144,4 +200,3 @@ See the [LICENSE.txt](LICENSE.txt) file for details.
 
 **Goldin Baloyi**   
 🚀 Focused on logistics, traceability, and modern enterprise applications.
-# LeaveMgmt
