@@ -27,7 +27,27 @@
     <Folder Include="Procedures\" />
   </ItemGroup>
 	<ItemGroup>
-		<None Include="Seeds\*.txt" CopyToOutputDirectory="PreserveNewest" />
+		<None Include="..\LeaveMgmt.Infrastructure\Seeds\*.json" CopyToOutputDirectory="Always" Link="Seeds\%(FileName)%(Extension)" />
+		<None Include="..\LeaveMgmt.Infrastructure\Seeds\*.txt" CopyToOutputDirectory="Always" Link="Seeds\%(FileName)%(Extension)" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+	  <None Update="Seeds\Dev.txt">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Seeds\Holidays.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Seeds\LeaveTypes.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Seeds\Managment.txt">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Seeds\Support.txt">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 	<PropertyGroup>

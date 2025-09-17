@@ -12,8 +12,7 @@ namespace LeaveMgmt.Infrastructure.Repositories;
 /// </summary>
 public sealed class HolidayRepository(IConfiguration cfg, ILogger<HolidayRepository> logger) : IHolidayRepository
 {
-    private readonly string _path = cfg["Seed:HolidaysPath"]
-        ?? Path.Combine(AppContext.BaseDirectory, "Seeds", "Holidays.json");
+    private readonly string _path =  Path.Combine(AppContext.BaseDirectory, "Seeds", "Holidays.json");
 
     /// <summary>
     /// Get holidays for the specified year.

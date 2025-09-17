@@ -109,3 +109,32 @@ a, .btn-link {
         background-color: #f8f9fa;
         color: #999;
     }
+
+
+/* Weekday header */
+.calendar-header {
+    text-align: center;
+    font-weight: bold;
+    padding: 5px;
+}
+
+    /* Shared style for weekends + holidays */
+    .calendar-cell.weekend-holiday,
+    .calendar-header.weekend {
+        background-color: #f0dada; /* light red/gray tint */
+        color: #a00;
+        font-weight: bold;
+    }
+
+/* Selected/bookable days (already blue) */
+.calendar-cell.in-range {
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+}
+
+.calendar-cell.empty {
+    background: transparent;
+    border: none;
+    cursor: default;
+}

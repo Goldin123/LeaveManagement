@@ -18,8 +18,7 @@ public sealed class LeaveTypeSeeder(
         var enabled = bool.TryParse(cfg["Seed:LeaveTypes"], out var v) && v;
         if (!enabled) return;
 
-        var path = cfg["Seed:LeaveTypesPath"]
-                   ?? Path.Combine(AppContext.BaseDirectory, "Seeds", "LeaveTypes.json");
+        var path = Path.Combine(AppContext.BaseDirectory, "Seeds", "LeaveTypes.json");
 
         if (!File.Exists(path))
         {
