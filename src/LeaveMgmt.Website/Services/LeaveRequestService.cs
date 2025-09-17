@@ -9,10 +9,12 @@ public sealed class LeaveRequestService
 {
     private readonly IHttpClientFactory _httpFactory;
     private readonly LeaveTypeService _leaveTypes;
-    public LeaveRequestService(IHttpClientFactory httpFactory, LeaveTypeService leaveTypes)
+    private readonly HolidayService _holiday;
+    public LeaveRequestService(IHttpClientFactory httpFactory, LeaveTypeService leaveTypes, HolidayService holiday)
     {
         _httpFactory = httpFactory;
         _leaveTypes = leaveTypes;
+        _holiday = holiday;
     }
 
     private HttpClient Client()
@@ -64,7 +66,7 @@ public sealed class LeaveRequestService
             if (lt != null)
             {
                 req.LeaveTypeName = lt.Name;
-                req.Days = Helpers.Helpers.CalculateWorkingDays(req.StartDate, req.EndDate);
+                req.Days = await Helpers.Helpers.CalculateWorkingDaysAsync(req.StartDate, req.EndDate, _holiday);
             }
         }
         return data ?? new();

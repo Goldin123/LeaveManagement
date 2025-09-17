@@ -1,5 +1,4 @@
-﻿// File: LeaveMgmt.Application/Queries/LeaveTypes/GetAllLeaveTypesQuery.cs
-using LeaveMgmt.Application.Abstractions;
+﻿using LeaveMgmt.Application.Abstractions;
 using LeaveMgmt.Application.Abstractions.Repositories;
 using LeaveMgmt.Domain;
 using LeaveMgmt.Domain.LeaveTypes;
@@ -13,6 +12,17 @@ public sealed class GetAllLeaveTypesHandler(ILeaveTypeRepository repo)
 {
     public async Task<Result<IReadOnlyList<LeaveType>>> Handle(GetAllLeaveTypesQuery query, CancellationToken ct)
     {
-        return await repo.GetAllAsync(ct);
+        try
+        {
+            var res = await repo.GetAllAsync(ct);
+            if (!res.IsSuccess || res.Value is null)
+                return Result<IReadOnlyList<LeaveType>>.Failure(res.Error ?? "Failed to load leave types.");
+
+            return Result<IReadOnlyList<LeaveType>>.Success(res.Value);
+        }
+        catch (Exception ex)
+        {
+            return Result<IReadOnlyList<LeaveType>>.Failure($"Query failed: {ex.Message}");
+        }
     }
 }
