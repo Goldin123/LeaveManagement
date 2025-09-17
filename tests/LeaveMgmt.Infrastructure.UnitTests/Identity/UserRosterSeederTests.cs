@@ -46,14 +46,15 @@ Full Name,Employee Number,Email Address,Cellphone Number
 Amy Burns,2012,amyburns@acme.com,+27 ...");
 
         var cfg = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Teams:Dev"] = dev,
-                ["Teams:Management"] = mgmt,
-                ["Teams:Support"] = sup,
-                ["Seed:Users"] = "true",
-                ["Seed:DefaultPassword"] = "ChangeMe123!"
-            }).Build();
+      .AddInMemoryCollection(new Dictionary<string, string?>
+      {
+          ["Teams:Dev"] = dev,
+          ["Teams:Managment"] = mgmt, // fix spelling to match loader
+          ["Teams:Support"] = sup,
+          ["Seed:Users"] = "true",
+          ["Seed:DefaultPassword"] = "ChangeMe123!"
+      }).Build();
+
 
         // single in-memory sqlite connection
         var conn = new SqliteConnection("Data Source=:memory:");
@@ -98,3 +99,4 @@ Amy Burns,2012,amyburns@acme.com,+27 ...");
         users.Should().Contain(u => u.Email == "amyburns@acme.com");
     }
 }
+    

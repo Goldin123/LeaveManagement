@@ -24,15 +24,28 @@ public sealed class TxtTeamRoster(IConfiguration cfg) : ITeamRoster
     {
         if (_loaded) return;
 
-        // Default to files under Infrastructure\Seeds\*.txt if not provided
-        var root = AppContext.BaseDirectory; // bin\[Debug|Release]\net9.0\
-        string DefaultPath(string file) => Path.Combine(root, "Seeds", file);
-
-        LoadFile(DefaultPath("Dev.txt"), "Employee");
-        LoadFile(DefaultPath("Managment.txt"), "Manager");
-        LoadFile(DefaultPath("Support.txt"), "Support");
+        // Prefer configured file paths if they exist, otherwise fall back to Seeds folder
+        TryLoad(cfg["Teams:Dev"], "Employee", "Dev.txt");
+        TryLoad(cfg["Teams:Management"], "Manager", "Managment.txt"); // support proper spelling
+        TryLoad(cfg["Teams:Managment"], "Manager", "Managment.txt");  // support current spelling
+        TryLoad(cfg["Teams:Support"], "Support", "Support.txt");
 
         _loaded = true;
+    }
+
+    private void TryLoad(string? configuredPath, string role, string defaultFile)
+    {
+        if (!string.IsNullOrWhiteSpace(configuredPath) && File.Exists(configuredPath))
+        {
+            LoadFile(configuredPath, role);
+            return;
+        }
+
+        var fallback = Path.Combine(AppContext.BaseDirectory, "Seeds", defaultFile);
+        if (File.Exists(fallback))
+        {
+            LoadFile(fallback, role);
+        }
     }
 
     private void LoadFile(string path, string role)
@@ -44,7 +57,7 @@ public sealed class TxtTeamRoster(IConfiguration cfg) : ITeamRoster
             var line = raw.Trim();
             if (line.Length == 0 || line.StartsWith("#")) continue;
 
-            // Skip headings in your sample files
+            // Skip headings
             if (line.StartsWith("Team Lead", StringComparison.OrdinalIgnoreCase)) continue;
             if (line.StartsWith("Team Members", StringComparison.OrdinalIgnoreCase)) continue;
             if (line.StartsWith("Full Name", StringComparison.OrdinalIgnoreCase)) continue;

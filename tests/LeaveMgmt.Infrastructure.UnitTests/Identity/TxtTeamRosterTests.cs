@@ -35,7 +35,7 @@ Amy Burns,2012,amyburns@acme.com,+27 ...");
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Teams:Dev"] = dev,
-                ["Teams:Management"] = mgmt,
+                ["Teams:Managment"] = mgmt, // fix spelling to match loader
                 ["Teams:Support"] = sup
             }).Build();
 
