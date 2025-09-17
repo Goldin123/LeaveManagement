@@ -55,7 +55,7 @@ public sealed class UserRosterSeeder(
         }
 
         Accumulate(cfg["Teams:Dev"]);
-        Accumulate(cfg["Teams:Management"]);
+        Accumulate(cfg["Teams:Management"] ?? cfg["Teams:Managment"]);
         Accumulate(cfg["Teams:Support"]);
 
         var (hash, salt) = hasher.Hash(cfg["Seed:DefaultPassword"] ?? "ChangeMe123!");
