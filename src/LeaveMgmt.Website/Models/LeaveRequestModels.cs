@@ -44,3 +44,13 @@ public sealed class Holiday
     public string Name { get; set; } = string.Empty;
     public DateTime Date { get; set; }
 }
+
+public sealed class EditRequest
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public Guid LeaveTypeId { get; set; }
+    public DateOnly StartDate { get; set; }
+    public DateOnly EndDate { get; set; }
+    public string Reason { get; set; } = string.Empty;
+}

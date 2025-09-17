@@ -15,4 +15,5 @@ public interface ILeaveRequestService
     Task<ApiResult<bool>> RetractAsync(RetractRequest dto);
     Task<List<LeaveRequestListItem>> GetAllAsync();
     Task<List<UserDto>> GetAllUsersAsync();
+    Task<ApiResult<bool>> EditAsync(EditRequest dto);
 }
