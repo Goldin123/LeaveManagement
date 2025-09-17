@@ -5,9 +5,10 @@ using FluentAssertions;
 using Moq;
 using LeaveMgmt.Application.Abstractions.Repositories;
 using LeaveMgmt.Application.Abstractions.Security;
-using LeaveMgmt.Application.Commands.Users.Login; // keep your actual namespace for LoginUserCommand
+using LeaveMgmt.Application.Commands.Users.Login;
 using LeaveMgmt.Domain;
 using LeaveMgmt.Domain.Users;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace LeaveMgmt.Application.UnitTests.Auth;
@@ -20,11 +21,12 @@ public class LoginUserHandlerTests
         var users = new Mock<IUserRepository>();
         var hasher = new Mock<IPasswordHasher>();
         var jwt = new Mock<IJwtTokenService>();
+        var logger = new Mock<ILogger<LoginUserHandler>>();
 
         users.Setup(u => u.GetByEmailAsync("nope@acme.com", It.IsAny<CancellationToken>()))
              .ReturnsAsync(Result<User?>.Success(null));
 
-        var sut = new LoginUserHandler(users.Object, hasher.Object, jwt.Object);
+        var sut = new LoginUserHandler(users.Object, hasher.Object, jwt.Object, logger.Object);
 
         var res = await sut.Handle(new LoginUserCommand("nope@acme.com", "pw"), CancellationToken.None);
 
@@ -38,6 +40,7 @@ public class LoginUserHandlerTests
         var users = new Mock<IUserRepository>();
         var hasher = new Mock<IPasswordHasher>();
         var jwt = new Mock<IJwtTokenService>();
+        var logger = new Mock<ILogger<LoginUserHandler>>();
 
         // domain user
         var u = new User("dev@acme.com", "Dev User", "hash", "salt", new[] { "Employee" });
@@ -47,11 +50,10 @@ public class LoginUserHandlerTests
 
         hasher.Setup(h => h.Verify("pw", "hash", "salt")).Returns(true);
 
-        // FIX: match the actual values
         jwt.Setup(j => j.CreateToken(u.Id, u.Email, u.FullName, u.Roles, null))
            .Returns("jwt-token");
 
-        var sut = new LoginUserHandler(users.Object, hasher.Object, jwt.Object);
+        var sut = new LoginUserHandler(users.Object, hasher.Object, jwt.Object, logger.Object);
 
         var res = await sut.Handle(new LoginUserCommand("dev@acme.com", "pw"), CancellationToken.None);
 

@@ -15,6 +15,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -63,6 +64,9 @@ Amy Burns,2012,amyburns@acme.com,+27 ...");
 
         services.AddDbContext<LeaveMgmtDbContext>(o => o.UseSqlite(conn));
 
+        // 🔹 Register logging so ILogger<T> can be injected into repositories
+        services.AddLogging();
+
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddSingleton<ITeamRoster, TxtTeamRoster>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
@@ -77,7 +81,11 @@ Amy Burns,2012,amyburns@acme.com,+27 ...");
         }
 
         // run the seeder
-        var seeder = new UserRosterSeeder(new NullLogger<UserRosterSeeder>(), provider.GetRequiredService<IServiceScopeFactory>(), cfg);
+        var seeder = new UserRosterSeeder(
+            new NullLogger<UserRosterSeeder>(),
+            provider.GetRequiredService<IServiceScopeFactory>(),
+            cfg);
+
         await seeder.StartAsync(CancellationToken.None);
 
         // verify users exist

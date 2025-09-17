@@ -2,10 +2,10 @@
 @using LeaveMgmt.Website.Models
 @using LeaveMgmt.Website.Services
 @using LeaveMgmt.Website.Helpers
-@inject LeaveRequestService LeaveRequestsService
-@inject LeaveTypeService LeaveTypesService
+@inject ILeaveRequestService LeaveRequestsService
+@inject ILeaveTypeService LeaveTypesService
 @inject NavigationManager Nav
-@inject HolidayService HolidayService
+@inject IHolidayService HolidayService
 <h3>Request Leave</h3>
 
 <div class="row">

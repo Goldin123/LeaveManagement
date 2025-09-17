@@ -34,7 +34,7 @@ public static class Helpers
     /// Calculates number of working days between From and To (inclusive),
     /// excluding weekends and public holidays fetched via HolidayService.
     /// </summary>
-    public static async Task<int> CalculateWorkingDaysAsync(DateTime from, DateTime to, HolidayService holidayService)
+    public static async Task<int> CalculateWorkingDaysAsync(DateTime from, DateTime to, IHolidayService holidayService)
     {
         if (to < from)
             return 0;

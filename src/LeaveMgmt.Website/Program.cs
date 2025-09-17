@@ -1,7 +1,16 @@
 using LeaveMgmt.Website.Services;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog from appsettings.json
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
@@ -16,11 +25,11 @@ builder.Services.AddHttpClient("api", client =>
                                  ?? "https://localhost:7186/");
 });
 
-// Register services
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<LeaveRequestService>();
-builder.Services.AddScoped<LeaveTypeService>();
-builder.Services.AddScoped<HolidayService>();
+// Register services by interface
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ILeaveRequestService, LeaveRequestService>();
+builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();
+builder.Services.AddScoped<IHolidayService, HolidayService>();
 builder.Services.AddScoped<ProtectedLocalStorage>();
 
 var app = builder.Build();
