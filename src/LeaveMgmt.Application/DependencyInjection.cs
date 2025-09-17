@@ -32,7 +32,7 @@ public static class DependencyInjection
         foreach (var v in validatorTypes) services.AddScoped(v.Service, v.Impl);
 
         // Pipeline behaviors (order: auth, then validation, then handler)
-        //services.AddScoped(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         return services;

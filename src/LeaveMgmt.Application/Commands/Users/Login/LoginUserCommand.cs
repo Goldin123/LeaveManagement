@@ -8,8 +8,10 @@ namespace LeaveMgmt.Application.Commands.Users.Login;
 
 /// <summary>
 /// Command request: authenticate a user and return a JWT if successful.
+/// Implements <see cref="IAllowAnonymous"/> so it bypasses auth checks.
 /// </summary>
-public sealed record LoginUserCommand(string Email, string Password) : IRequest<Result<string>>;
+public sealed record LoginUserCommand(string Email, string Password)
+    : IRequest<Result<string>>, IAllowAnonymous;
 
 /// <summary>
 /// Marker interface: allows anonymous access (no auth required).
