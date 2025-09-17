@@ -7,9 +7,11 @@ var logPath = builder.Configuration["Serilog:Path"]
               ?? "Logs/log-.txt"; // fallback if missing
 
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.File(logPath, rollingInterval: RollingInterval.Day)
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning) // less noise
+    .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Information()
+    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
     .Enrich.FromLogContext()
-    .MinimumLevel.Debug()
     .CreateLogger();
 
 builder.Host.UseSerilog();
