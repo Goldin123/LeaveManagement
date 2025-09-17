@@ -79,10 +79,15 @@
                                 var isHoliday = Holidays.Any(h => h.Date.Date == day.Date);
                                 var isWeekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
 
-                                var css = inRange
-                                ? "bg-primary text-white"
-                                : (isWeekend || isHoliday) ? "holiday-day"
-                                : "bg-light";
+                                var css = isHoliday
+                                ? "bg-danger text-white"              // holidays red
+                                : isWeekend
+                                ? "holiday-day"                   // weekends light red
+                                : inRange
+                                ? "bg-primary text-white"     // only weekdays in range turn blue
+                                : "bg-light";                 // default
+
+
 
                                 <div class="calendar-cell @css">@day.Day</div>
                             }
@@ -95,6 +100,9 @@
     </div>
 </div>
 
+<!-- Popup notification -->
+<Notification Message="@_message" AlertClass="@_alertClass" OnClear="ClearMessage" />
+
 @code {
     private Guid SelectedLeaveTypeId = Guid.Parse("C34DE22D-DBEA-40AC-84C4-F1B5A4F335C3"); // default Annual
     private DateTime FromDate = DateTime.Today;
@@ -105,6 +113,9 @@
     private Dictionary<DateTime, List<DateTime>> CalendarMonths = new();
     private List<Holiday> Holidays = new();
 
+    // Popup state
+    private string? _message;
+    private string _alertClass = "alert-info";
 
     protected override async Task OnInitializedAsync()
     {
@@ -145,7 +156,6 @@
         }
     }
 
-
     private async Task RecalculateDays()
     {
         if (ToDate < FromDate)
@@ -173,7 +183,7 @@
             StartDate = DateOnly.FromDateTime(FromDate),
             EndDate = DateOnly.FromDateTime(ToDate),
             Days = NumberOfDays,
-			Reason = LeaveTypes.FirstOrDefault(lt => lt.Id == SelectedLeaveTypeId)?.Name ?? "N/A"
+            Reason = LeaveTypes.FirstOrDefault(lt => lt.Id == SelectedLeaveTypeId)?.Name ?? "N/A"
         };
 
         var result = await LeaveRequestsService.SubmitAsync(dto);
@@ -182,15 +192,24 @@
 
         if (result.Success)
         {
+            _message = "Leave request submitted successfully!";
+            _alertClass = "alert-success";
+
             // redirect back to dashboard
             Nav.NavigateTo("/dashboard", forceLoad: true);
         }
         else
         {
-            // TODO: show error to user
+            _message = result.Error ?? "Submit failed.";
+            _alertClass = "alert-danger";
+
             Console.WriteLine("Submit failed: " + result.Error);
         }
     }
 
-
+    private void ClearMessage()
+    {
+        _message = null;
+        StateHasChanged();
+    }
 }
