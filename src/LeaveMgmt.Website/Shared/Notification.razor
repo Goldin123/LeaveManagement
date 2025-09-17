@@ -1,0 +1,39 @@
+﻿@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="alert @AlertClass alert-dismissible fade show mt-2" role="alert">
+        @Message
+        <button type="button" class="btn-close" @onclick="Clear"></button>
+    </div>
+}
+
+@code {
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public string AlertClass { get; set; } = "alert-info";
+    [Parameter] public EventCallback OnClear { get; set; }
+
+    private CancellationTokenSource? _cts;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(Message))
+        {
+            _cts?.Cancel();
+            _cts = new CancellationTokenSource();
+
+            try
+            {
+                await Task.Delay(2000, _cts.Token); // auto-dismiss after 2 seconds
+                await Clear();
+            }
+            catch (TaskCanceledException) { }
+        }
+    }
+
+    private async Task Clear()
+    {
+        Message = null;
+        if (OnClear.HasDelegate)
+            await OnClear.InvokeAsync();
+        StateHasChanged();
+    }
+}
