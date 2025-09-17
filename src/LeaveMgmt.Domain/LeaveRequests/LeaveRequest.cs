@@ -87,4 +87,23 @@ public sealed class LeaveRequest : Entity
         Raise(new Events.LeaveRequestRetracted(Id));
         return DomainResult.Success();
     }
+
+
+    // File: Domain/LeaveRequests/LeaveRequest.cs
+    public DomainResult Edit(EmployeeId by, Guid leaveTypeId, DateRange range, string reason)
+    {
+        if (by.Value != EmployeeId.Value)
+            return DomainResult.Fail("Only the owner can edit their request.");
+        if (Status != LeaveStatus.Submitted && Status != LeaveStatus.Draft)
+            return DomainResult.Fail("Only draft or submitted requests can be edited.");
+        if (string.IsNullOrWhiteSpace(reason))
+            return DomainResult.Fail("Reason required.");
+
+        LeaveTypeId = leaveTypeId;
+        Range = range;
+        Reason = reason.Trim();
+        Raise(new Events.LeaveRequestEdited(Id));
+        return DomainResult.Success();
+    }
+
 }

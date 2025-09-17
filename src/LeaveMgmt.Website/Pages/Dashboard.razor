@@ -5,10 +5,36 @@
 @using System.Security.Claims
 @inject ILeaveRequestService LeaveRequests
 @inject IAuthService Auth
+@inject IHolidayService HolidayService
 
 <h3>Dashboard</h3>
 
-<table class="table table-striped">
+@if (IsEditing && EditingRequest is not null)
+{
+    <div class="card mt-3 p-3">
+        <h5>Edit Leave Request</h5>
+        <div class="mb-2">
+            <label class="form-label">Start Date</label>
+            <input type="date" class="form-control" @bind="StartDateForUi" @bind:after="RecalculateDays" />
+        </div>
+        <div class="mb-2">
+            <label class="form-label">End Date</label>
+            <input type="date" class="form-control" @bind="EndDateForUi" @bind:after="RecalculateDays" />
+        </div>
+        <div class="mb-2">
+            <label class="form-label">Days</label>
+            <input type="text" class="form-control" value="@CalculatedDays" readonly />
+        </div>
+        <div class="mb-2">
+            <label class="form-label">Reason</label>
+            <textarea class="form-control" @bind="EditingRequest.Reason"></textarea>
+        </div>
+        <button class="btn btn-success me-2" @onclick="SaveEdit">Save</button>
+        <button class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+    </div>
+}
+
+<table class="table table-striped mt-3">
     <thead>
         <tr>
             <th>Start Date</th>
@@ -31,8 +57,11 @@
                 <td>
                     @if (req.Status == "Submitted")
                     {
-                        <button class="btn btn-warning btn-sm" @onclick="() => Retract(req.Id)">
+                        <button class="btn btn-warning btn-sm me-1" @onclick="() => Retract(req.Id)">
                             Retract
+                        </button>
+                        <button class="btn btn-primary btn-sm" @onclick="() => BeginEdit(req)">
+                            Edit
                         </button>
                     }
                 </td>
@@ -41,12 +70,49 @@
     </tbody>
 </table>
 
+<!-- Popup notification -->
+<Notification Message="@_message" AlertClass="@_alertClass" OnClear="ClearMessage" />
+
 @code {
     private List<LeaveRequestListItem> Requests = new();
 
+    private bool IsEditing = false;
+    private EditRequest? EditingRequest;
+    private int CalculatedDays { get; set; }
+
+    // Popup state
+    private string? _message;
+    private string _alertClass = "alert-info";
+
+    // Wrappers for DateOnly -> DateTime for UI binding
+    private DateTime StartDateForUi
+    {
+        get => EditingRequest?.StartDate.ToDateTime(TimeOnly.MinValue) ?? DateTime.Today;
+        set
+        {
+            if (EditingRequest is not null)
+            {
+                EditingRequest.StartDate = DateOnly.FromDateTime(value);
+                _ = RecalculateDays();
+            }
+        }
+    }
+
+    private DateTime EndDateForUi
+    {
+        get => EditingRequest?.EndDate.ToDateTime(TimeOnly.MinValue) ?? DateTime.Today;
+        set
+        {
+            if (EditingRequest is not null)
+            {
+                EditingRequest.EndDate = DateOnly.FromDateTime(value);
+                _ = RecalculateDays();
+            }
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
-
         var employeeId = Helpers.Helpers.TryGetUserIdFromJwt(LoggedUser.Token);
         if (employeeId != Guid.Empty)
         {
@@ -60,11 +126,90 @@
         var result = await LeaveRequests.RetractAsync(retract);
         if (result.Success)
         {
-            var employeeId = Helpers.Helpers.TryGetUserIdFromJwt(LoggedUser.Token);
+            await Reload();
+            _message = "Leave request retracted successfully!";
+            _alertClass = "alert-success";
+        }
+        else
+        {
+            _message = result.Error ?? "Failed to retract leave request.";
+            _alertClass = "alert-danger";
+        }
+    }
 
+    private void BeginEdit(LeaveRequestListItem req)
+    {
+        EditingRequest = new EditRequest
+        {
+            Id = req.Id,
+            LeaveTypeId = req.LeaveTypeId,
+            StartDate = DateOnly.FromDateTime(req.StartDate),
+            EndDate = DateOnly.FromDateTime(req.EndDate),
+            Reason = string.Empty // or load from API if DTO is extended
+        };
+        IsEditing = true;
+
+        _ = RecalculateDays();
+    }
+
+    private async Task SaveEdit()
+    {
+        if (EditingRequest is null) return;
+
+        if (string.IsNullOrWhiteSpace(EditingRequest.Reason))
+        {
+            _message = "Please provide a reason for your leave.";
+            _alertClass = "alert-danger";
+            return;
+        }
+
+        var result = await LeaveRequests.EditAsync(EditingRequest);
+        if (result.Success)
+        {
+            await Reload();
+            IsEditing = false;
+            EditingRequest = null;
+
+            _message = "Leave request updated successfully!";
+            _alertClass = "alert-success";
+        }
+        else
+        {
+            _message = result.Error ?? "Edit failed.";
+            _alertClass = "alert-danger";
+        }
+    }
+
+    private void CancelEdit()
+    {
+        IsEditing = false;
+        EditingRequest = null;
+    }
+
+    private async Task Reload()
+    {
+        var employeeId = Helpers.Helpers.TryGetUserIdFromJwt(LoggedUser.Token);
+        if (employeeId != Guid.Empty)
+        {
             Requests = await LeaveRequests.GetByEmployeeAsync(employeeId);
             StateHasChanged();
         }
     }
 
+    private async Task RecalculateDays()
+    {
+        if (EditingRequest is null) return;
+
+        var from = EditingRequest.StartDate.ToDateTime(TimeOnly.MinValue);
+        var to = EditingRequest.EndDate.ToDateTime(TimeOnly.MinValue);
+
+        CalculatedDays = await Helpers.Helpers.CalculateWorkingDaysAsync(from, to, HolidayService);
+        StateHasChanged();
+    }
+
+    private void ClearMessage()
+    {
+        _message = null;
+        StateHasChanged();
+    }
 }

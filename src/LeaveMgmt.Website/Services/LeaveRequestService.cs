@@ -212,4 +212,26 @@ public sealed class LeaveRequestService : ILeaveRequestService
         _logger.LogInformation("Fetched {Count} users", data.Count);
         return data;
     }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<bool>> EditAsync(EditRequest dto)
+    {
+        _logger.LogInformation("Editing leave request {LeaveRequestId}", dto.Id);
+
+        var c = Client();
+        var url = $"api/leave-requests/{dto.Id}/edit";
+
+        var employeeId = Helpers.Helpers.TryGetUserIdFromJwt(LoggedUser.Token);
+        if (employeeId == Guid.Empty)
+            return ApiResult<bool>.Fail("Invalid employee identity.");
+
+        dto.EmployeeId = employeeId;
+
+        var resp = await c.PutAsJsonAsync(url, dto);
+
+        return resp.IsSuccessStatusCode
+            ? ApiResult<bool>.Ok(true)
+            : ApiResult<bool>.Fail(await resp.Content.ReadAsStringAsync());
+    }
+
 }
