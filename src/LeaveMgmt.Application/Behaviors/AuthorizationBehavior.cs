@@ -3,11 +3,15 @@ using LeaveMgmt.Application.Commands.LeaveRequests.ApproveLeave;
 using LeaveMgmt.Application.Commands.LeaveRequests.RejectLeave;
 using LeaveMgmt.Application.Commands.LeaveRequests.RetractLeave;
 using LeaveMgmt.Application.Commands.LeaveRequests.SubmitLeaveRequest;
+using LeaveMgmt.Application.Commands.Users.Login;
 using LeaveMgmt.Application.Common;
 using LeaveMgmt.Domain;
 
 namespace LeaveMgmt.Application.Abstractions;
 
+/// <summary>
+/// Pipeline behavior that enforces authorization rules before executing handlers.
+/// </summary>
 public sealed class AuthorizationBehavior<TRequest, TResponse>(
     ICurrentUser currentUser)
     : IPipelineBehavior<TRequest, TResponse>
@@ -18,6 +22,10 @@ public sealed class AuthorizationBehavior<TRequest, TResponse>(
         Func<Task<TResponse>> next)
     {
         string? error = null;
+
+        // ✅ Skip checks if request allows anonymous (e.g., login)
+        if (request is IAllowAnonymous)
+            return next();
 
         if (!currentUser.IsAuthenticated)
         {
